@@ -1,4 +1,4 @@
-export default function App() {
+export default function HomePage() {
   return (
     <main>
       <h1>BoSo</h1>
