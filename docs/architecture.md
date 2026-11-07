@@ -7,25 +7,33 @@ React + Vite SPA로 구성하고 React Router의 선언형 라우팅을 사용�
 ```text
 src/
   main.tsx              # React·BrowserRouter 진입점
-  app/                  # 앱 조립·라우팅·전역 스타일
+  app/                  # 앱 조립·라우팅·메뉴 설정·전역 스타일
+    layout/             # AppLayout·Header·Footer
   pages/                # URL에 연결되는 화면
-    home/               # 현재 기본 실행 확인 화면
+    home/               # 공통 홈 프레임·서비스 준비 안내
+    coming-soon/        # 미구현 메뉴의 공통 준비 안내
     not-found/          # 미등록 경로 안내
   shared/
     api/                # 공통 JSON 요청·오류·서버 주소 연결
     config/             # 공개 환경변수 검증
+    ui/                 # Button·LinkButton·Badge·Card·PageHeading·EmptyState·Icon
+    assets/             # HTML 시제품에서 재사용한 캐릭터 PNG
   test/                 # 테스트 공통 설정
 ```
 
 의존 방향은 `app → pages → features → shared`를 기본으로 한다. 현재 기능이 없으므로 `features/`는 생성하지 않았다. 기능 구현 시 `features/auth`, `features/user-profile`, `features/personalized-todo` 등 해당 기능 디렉터리를 추가한다. 다른 기능의 내부 파일을 직접 참조하기보다 필요한 계약을 명시적으로 공유한다. `shared`는 `pages`, `features`, `app`을 import하지 않는다.
 
-`feat/common-layout`에서는 `app`에 공통 레이아웃을 연결하고 재사용 UI를 `shared/ui`에 추가한다. 페이지는 기능을 조합하며 공통 API 클라이언트에 도메인 로직을 넣지 않는다. 사용처 없는 빈 폴더·공용 컴포넌트는 미리 만들지 않는다.
+`app/layout/AppLayout.tsx`는 헤더·본문 Outlet·푸터를 조립한다. 본문 main은 레이아웃에 한 번만 두고 페이지는 본문 내용만 반환한다. 페이지 이동 시 제목과 본문 포커스를 갱신한다. 재사용 UI는 `shared/ui`에 두고 도메인 로직을 넣지 않는다.
+
+디자인은 작업 공간의 `BoSo_중간시제품.html`에서 파란색 `#0877f8`, 배경 `#f5f8fe`, 둥근 패널·메뉴·캐릭터를 참고했다. 내장 PNG 두 개는 `shared/assets`로 추출했으며 원본을 수정하지 않았다. 샘플 정책·프로필·To-Do·챗봇 로직은 이식하지 않았다. 외부 폰트·이미지 요청이나 추가 패키지는 없다.
+
+전역 CSS 토큰과 스타일은 `app/styles.css`에 둔다. 최대 너비 1180px, 760px 이하에서 2행 헤더·세로 카드 배치, 440px 이하에서 여백·캐릭터 크기를 조정한다. 키보드 포커스, 본문 바로가기, 현재 메뉴 `aria-current`, 모션 감소 설정을 지원한다.
 
 컴포넌트 파일은 PascalCase, 그 외 TypeScript 파일은 camelCase를 사용한다. 테스트는 검증 대상 옆에 `*.test.ts`, `*.test.tsx`로 둔다. 현재는 상대 경로 import를 사용한다.
 
 ## 라우팅
 
-현재 등록 경로는 `/`와 미등록 경로 처리(`*`)뿐이다. 로그인·정책·To-Do 등 서비스 URL은 기능 구현 시 합의해 추가한다. 기본 확인 화면은 서비스 홈 UI가 아니다. 인증 상태·보호 경로·토큰 저장은 아직 구현하지 않았다.
+`app/navigation.ts`에서 5개 메뉴를 관리한다. `/`는 홈 프레임, `/policies`, `/todos`, `/chat`, `/profile`은 공통 준비 안내 화면이며 `*`는 미등록 경로다. 이 경로는 프론트엔드 URL이며 백엔드 API 경로를 의미하지 않는다. 후속 기능은 해당 Route의 준비 안내를 실제 페이지로 교체한다. 인증 상태·보호 경로·토큰 저장·로그인 URL은 아직 구현하지 않았다.
 
 BrowserRouter를 사용하므로 운영 호스팅은 직접 접근·새로고침 시 SPA의 `index.html`로 fallback해야 한다. 해당 배포 설정은 `chore/frontend-deploy`에서 검증한다.
 

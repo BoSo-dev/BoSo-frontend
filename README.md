@@ -2,7 +2,7 @@
 
 K-패스, 기후동행카드 등 교통카드 정책을 통합하여 정책 요약, 개인별 정책 변경 To-Do, AI 챗봇을 제공하는 BoSo의 프론트엔드 저장소입니다.
 
-현재 `develop`에는 개발 계획의 0단계인 공통 실행·개발·검증 기반을 구성했습니다. 실제 서비스 기능과 UI는 후속 기능 브랜치에서 구현합니다.
+공통 실행·개발·검증 기반에 이어 `feat/common-layout`에서 헤더·내비게이션·푸터·공통 UI와 반응형 레이아웃을 구성했습니다. 실제 정책·인증·To-Do·챗봇 기능은 후속 기능 브랜치에서 구현합니다.
 
 ## 기술 스택
 
@@ -16,7 +16,7 @@ K-패스, 기후동행카드 등 교통카드 정책을 통합하여 정책 요�
 
 ## 빠른 시작
 
-명령은 `BoSo-frontend` 루트에서 실행합니다. 백엔드·DB 없이 기본 화면을 실행할 수 있습니다.
+명령은 `BoSo-frontend` 루트에서 실행합니다. 백엔드·DB 없이 공통 화면과 메뉴 이동을 확인할 수 있습니다.
 
 ```sh
 npm ci
@@ -59,10 +59,12 @@ preview는 운영 배포용 서버가 아닙니다. API 호출이 없는 기본 
 ```text
 src/
   main.tsx            # React·BrowserRouter 진입점
-  app/                # 앱 조립·라우팅·전역 스타일
-  pages/              # 기본 확인 화면·미등록 경로 안내
+  app/                # 앱 조립·라우팅·메뉴·공통 레이아웃·전역 스타일
+  pages/              # 홈 프레임·준비 안내·미등록 경로 안내
   shared/api/         # 공통 JSON 요청·오류 처리
   shared/config/      # 공개 환경변수 검증
+  shared/ui/          # 버튼·링크 버튼·배지·카드·페이지 제목·빈 상태·아이콘
+  shared/assets/      # 시제품에서 재사용한 캐릭터 이미지
   test/               # 테스트 공통 설정
 index.html            # 한국어 HTML 진입점
 vite.config.ts        # React 플러그인·개발/preview 서버
@@ -74,13 +76,26 @@ docs/                 # 구조·개발 계획
 .env.example          # 공개 API 주소 예시
 ```
 
-의존 방향은 `app → pages → features → shared`입니다. `features/`와 `shared/ui/`는 실제 기능·공통 UI를 구현할 때 생성합니다. 테스트는 대상 옆에 배치합니다. UTF-8/LF와 공백 2칸은 `.editorconfig`, Git 줄바꿈은 `.gitattributes`로 정의합니다.
+의존 방향은 `app → pages → features → shared`입니다. `features/`는 실제 기능 구현 시 생성합니다. 테스트는 대상 옆에 배치합니다. UTF-8/LF와 공백 2칸은 `.editorconfig`, Git 줄바꿈은 `.gitattributes`로 정의합니다.
 
 - [개발 지침](AGENTS.md)
 - [구조·라우팅·API 사용 기준](docs/architecture.md)
-- [개발 순서·담당·선행 조건](docs/development-plan.md)
+- [브랜치별 구현 범위와 협업 기준](docs/development-plan.md)
 
-현재 허용 범위는 기존 `BoSo-frontend/develop`뿐이며, 이전 `frontend-bootstrap` 설정 계획은 현재 0단계로 대체했습니다. 다음 단계는 개발자 B의 `feat/common-layout`입니다. 이후 B는 인증 → 프로필 → 개인별 To-Do, A는 정책 목록 → 상세 → 챗봇과 웹 내부 알림을 맡습니다. 이번 작업에서는 해당 브랜치를 생성·전환하지 않습니다.
+현재 사용자 요청에 따라 기존 `feat/common-layout`에서 작업합니다. 다른 브랜치를 생성·전환하거나 백엔드·상위 기획 파일을 수정하지 않습니다. 초기 설정은 `develop`에서 완료했으며 후속 기능은 별도 요청 범위에 따라 진행합니다.
+
+## 공통 레이아웃과 UI
+
+디자인은 작업 공간의 `BoSo_중간시제품.html`에 있는 파란색·연한 배경·둥근 패널·캐릭터와 5개 메뉴를 기준으로 했습니다. 내장 PNG를 `shared/assets`에 추출했으며 시제품의 샘플 데이터·로컬 저장·업무 로직은 복사하지 않았습니다. 새 패키지나 외부 폰트 요청도 추가하지 않았습니다.
+
+- `app/layout`: 공통 Header·Footer·Outlet, 단일 main, 본문 바로가기
+- `app/navigation.ts`: 홈·정책 변경·To-Do·AI 챗봇·내 정보의 경로와 표시 문구
+- `shared/ui`: Button·LinkButton(primary/secondary/subtle), Badge, Card, PageHeading, EmptyState, Icon
+- `app/styles.css`: 공통 색상 토큰·UI 스타일과 반응형 규칙
+
+`/`는 홈 프레임이며 `/policies`, `/todos`, `/chat`, `/profile`은 공통 준비 안내로 연결합니다. 후속 기능에서는 각 경로의 안내 화면을 실제 페이지로 교체합니다. 미등록 주소에도 공통 레이아웃과 홈 복귀 안내를 표시합니다. 로그인·회원가입·알림 기능은 아직 구현하지 않았습니다.
+
+헤더는 넓은 화면에서 한 줄, 760px 이하에서 브랜드와 메뉴를 두 줄로 배치합니다. 홈 카드는 모바일에서 세로로 전환하며 440px 이하에서는 여백·이미지 크기를 줄입니다. 키보드 포커스·현재 메뉴 표시·페이지 이동 시 본문 포커스와 제목 갱신·모션 감소 설정을 지원합니다. 페이지 컴포넌트에는 main을 중복 작성하지 않습니다.
 
 ## 백엔드 연동과 환경변수
 
