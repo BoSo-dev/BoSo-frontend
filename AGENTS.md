@@ -33,8 +33,10 @@
 
 ## Git과 협업
 
-- 일반 작업 흐름은 `작업 브랜치 → develop → main`이다. 이번 최소 초기 환경 구축은 사용자 지시에 따라 현재 `develop`에서 수행한다. 후속 설정은 `frontend-bootstrap`에서 이어갈 예정이다.
+- 일반 작업 흐름은 `작업 브랜치 → develop → main`이다. 이번 최소 초기 환경과 커밋·PR 스킬 구축은 사용자 지시에 따라 현재 `develop`에서 수행한다. 나머지 후속 설정은 `frontend-bootstrap`에서 이어갈 예정이다.
 - 브랜치 생성·전환, commit, push, PR 게시, merge는 각각 사용자 요청과 허용 범위 안에서 수행한다. 명시적 요청 없이 사용자 변경 삭제, 강제 push, 기존 커밋 amend를 하지 않는다.
 - 커밋·PR 제목은 `<type>(<scope>): <설명>`이며 설명·본문은 한국어를 기본으로 한다. 예: `chore(setup): 프론트엔드 최소 실행 환경 구성`.
 - API·환경변수·공통 설정이 바뀌면 백엔드와 후속 작업에 미치는 영향과 의존 관계를 설명한다. 규칙이 충돌하면 사용자 지시를 우선하고 해결되지 않은 충돌을 보고한다.
-- PR 전 실제 diff를 검토하고 수행한 검증과 미검증 사항을 기록한다. 프론트엔드 전용 Skills·Agents·CI는 아직 구성하지 않았다.
+- 커밋 작업 시 [.agents/skills/boso-commit/SKILL.md](.agents/skills/boso-commit/SKILL.md)를 읽고 적용한다.
+- PR 작성·갱신 시 [.agents/skills/boso-pr/SKILL.md](.agents/skills/boso-pr/SKILL.md)를 읽고 적용한다.
+- PR 전 실제 diff를 검토하고 수행한 검증과 미검증 사항을 기록한다. 스킬을 읽는 것 자체가 commit·push·PR 게시·merge 권한을 부여하지 않는다. 추가 Agents·CI는 아직 구성하지 않았다.

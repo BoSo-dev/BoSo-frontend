@@ -56,6 +56,7 @@ tsconfig*.json        # 앱·Vite 설정의 TypeScript 검사
 package.json          # 실행 명령·필수 의존성
 package-lock.json     # 재현 가능한 의존성 버전
 AGENTS.md             # 기본 개발·보안·협업 규칙
+.agents/skills/       # 프론트엔드 커밋·PR 스킬
 ```
 
 상세 폴더 아키텍처를 미리 만들지 않고 진입점과 기본 화면만 배치했습니다. UTF-8/LF와 공백 2칸은 `.editorconfig`, Git 줄바꿈은 `.gitattributes`로 정의합니다.
@@ -66,7 +67,7 @@ AGENTS.md             # 기본 개발·보안·협업 규칙
 
 - 백엔드는 FastAPI + SQLAlchemy + Alembic + Supabase PostgreSQL이며 `app/api`, `app/core`, `app/modules`, `alembic`, `tests`, `scripts`로 구성됩니다.
 - 기존 Python 코드는 snake_case 함수·모듈, PascalCase 클래스, 공백 4칸 및 Ruff 규칙을 사용합니다. 프론트엔드에는 React·TypeScript의 PascalCase 컴포넌트·타입, camelCase 함수·변수, 공백 2칸을 적용합니다.
-- 백엔드의 `.agents/skills/boso-commit`, `boso-pr`, 검사 스크립트, GitHub CI·PR 템플릿은 참고만 했습니다. Python·DB 전용 구조와 하네스를 복사하지 않았습니다.
+- 백엔드의 `.agents/skills/boso-commit`, `boso-pr`을 참고해 프론트엔드 검증 명령에 맞는 두 스킬을 구성했습니다. Python·DB 전용 구조와 검사 스크립트·GitHub CI·PR 템플릿은 복사하지 않았습니다.
 - 일반 협업 흐름은 작업 브랜치에서 `develop`으로 PR, 배포 시 `develop → main`입니다. 이번 초기 구축은 사용자 요청대로 `develop`에서 진행하며 후속 설정은 `frontend-bootstrap`에서 진행할 예정입니다. 자동 commit·push·merge·브랜치 생성은 하지 않습니다.
 - 변경사항 보존, 한국어 커밋·PR, 실제 검증 결과 보고, 비밀정보 비노출을 공통 규칙으로 적용합니다. 자세한 프론트엔드 규칙은 [AGENTS.md](AGENTS.md)를 확인하세요.
 
@@ -87,12 +88,26 @@ AGENTS.md             # 기본 개발·보안·협업 규칙
 
 `.env`와 `.env.*`는 Git에서 제외하고, 필요해지면 비밀이 없는 `.env.example`을 추가합니다. `VITE_*`는 브라우저 번들에 공개되므로 DB 주소, Supabase service role 키, JWT 서명 키, 외부 AI 비밀 키를 넣지 않습니다. 서버의 `.env`를 프론트엔드로 복사하지 않습니다.
 
+## 커밋·PR 스킬
+
+사용자 요청에 따라 현재 `develop`에 다음 스킬을 구성했습니다.
+
+- [boso-commit](.agents/skills/boso-commit/SKILL.md): 실제 diff 검토, 관련 검증, 경로별 staging과 요청된 커밋
+- [boso-pr](.agents/skills/boso-pr/SKILL.md): base·head와 실제 diff 확인, 한국어 PR 초안 작성 및 허용된 게시·갱신
+
+```text
+$boso-commit 현재 변경을 검증하고 커밋해줘.
+$boso-pr 현재 브랜치의 PR 제목과 본문을 작성해줘.
+```
+
+두 번째 요청은 초안 작성만 허용합니다. commit·push·PR 게시·merge는 각각 사용자 요청과 기존 허용 범위를 따릅니다. 코드·설정 변경은 타입 검사와 빌드, 문서·스킬 변경은 링크·명령·공백 및 사용 가능한 스킬 검증 도구로 확인합니다. 스킬 구성 자체는 Git 기록이나 원격 상태를 변경하지 않습니다.
+
 ## 후속 작업: frontend-bootstrap
 
 - 상세 프론트엔드 폴더 아키텍처
 - React Router와 공통 API 클라이언트, 확인된 계약 기반 환경변수
 - 추가 코드 품질 도구와 테스트 자동화·CI
-- 프론트엔드 전용 Skills·Agents 구성
+- 추가 Skills·Agents 구성(기본 커밋·PR 스킬은 현재 `develop`에 구성)
 - 하네스 엔지니어링 환경 전체 구축
 
 실제 서비스 기능과 UI는 기본 설정 이후 각 기능 작업에서 구현합니다.
