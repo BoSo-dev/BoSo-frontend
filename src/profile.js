@@ -288,6 +288,10 @@
         data = saved
         summary()
         message('교통 정보를 저장했습니다.')
+        if (global.BoSo.todos) {
+          try { await global.BoSo.todos.sync(requestOptions()) }
+          catch { if (!disposed) message('교통 정보는 저장했습니다. 할 일 갱신은 완료하지 못했으니 To-Do에서 다시 확인해 주세요.', true) }
+        }
         find('feedback').focus()
       } catch (problem) {
         if (disposed) return

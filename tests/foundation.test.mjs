@@ -98,7 +98,7 @@ test('단일 HTML은 CSS·일반 JS·원본 이미지를 포함하고 재현 가
     if (attributes.includes('application/json')) JSON.parse(code)
     else new vm.Script(code)
   }
-  assert.equal(scripts.length, 6)
+  assert.equal(scripts.length, 8)
 })
 
 test('통합 빌드는 외부 자원과 모듈 스크립트를 거부한다', async () => {

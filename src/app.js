@@ -20,7 +20,8 @@
     const auth = window.BoSo.createAuth({ services, store })
     const profile = window.BoSo.createProfile({ auth, services, store })
     const policies = window.BoSo.createPolicies({ services })
-    Object.assign(window.BoSo, { services, store, auth, profile, policies })
+    const todos = window.BoSo.createTodos({ auth, services, store })
+    Object.assign(window.BoSo, { services, store, auth, profile, policies, todos })
     const noticeElement = document.getElementById('session-notice')
     const logoutButton = document.getElementById('logout-button')
     let notice = ''
@@ -143,7 +144,7 @@
         return
       }
       const blocked = (route?.protected && !authenticated) || ((key === 'login' || key === 'signup') && loading)
-      const template = blocked ? 'session-view' : key === 'login' || key === 'signup' ? 'auth-view' : key === 'profile' ? 'profile-view' : key === 'policies' ? policyDetail ? 'policy-detail-view' : 'policies-view' : key === 'home' ? 'home-view' : 'placeholder-view'
+      const template = blocked ? 'session-view' : key === 'login' || key === 'signup' ? 'auth-view' : key === 'todos' ? 'todos-view' : key === 'profile' ? 'profile-view' : key === 'policies' ? policyDetail ? 'policy-detail-view' : 'policies-view' : key === 'home' ? 'home-view' : 'placeholder-view'
       const previous = store.getState().route
       disposePage()
       disposePage = () => {}
@@ -155,8 +156,13 @@
         main.querySelector('[data-retry-session]').addEventListener('click', () => { void auth.initialize() })
         main.querySelector('.session-actions a').href = '#/login?next=' + encodeURIComponent(key)
       } else if (template === 'auth-view') bindAuthForm(key, next)
+      else if (template === 'todos-view') disposePage = window.BoSo.mountTodos(main, { todos, services, store })
       else if (template === 'profile-view') disposePage = window.BoSo.mountProfile(main, { profile, services, store })
-      else if (key === 'policies' || key === 'home') disposePage = window.BoSo.mountPolicies(main, { policies, services, profile, store, home: key === 'home' })
+      else if (key === 'policies' || key === 'home') {
+        const closePolicies = window.BoSo.mountPolicies(main, { policies, services, profile, store, home: key === 'home' })
+        const closeTodos = key === 'home' ? window.BoSo.mountTodoHome(main, { todos, services, store }) : () => {}
+        disposePage = () => { closePolicies(); closeTodos() }
+      }
       else if (template === 'placeholder-view') {
         main.querySelector('[data-heading]').textContent = route?.title ?? '페이지를 찾을 수 없습니다.'
         main.querySelector('[data-description]').textContent = route?.description ?? '주소를 다시 확인해 주세요.'
