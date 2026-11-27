@@ -41,6 +41,13 @@
       if (storage) { try { storage.setItem(key(state), JSON.stringify({ version: 1, data })) } catch { storage = null } }
     }
     return { owner, check, local, save, get persistent() { return Boolean(storage) },
+      reset() {
+        const state = owner()
+        if (services.mode !== 'demo') throw fail('INVALID_INPUT', '시연 모드에서만 초기화할 수 있습니다.')
+        // 읽기 실패로 저장이 중단되어도 기존 디스크 키 삭제를 다시 시도한다.
+        try { global.localStorage?.removeItem(key(state)) } catch { throw fail('STORAGE_FAILED', '저장 정보를 삭제하지 못했습니다.') }
+        memory.delete(state.user.id)
+      },
       async request(state, path, options = {}) {
         check(state)
         const value = await auth.request(path, options)

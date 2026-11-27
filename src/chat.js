@@ -29,6 +29,7 @@
     }
     return Object.freeze({
       get persistent() { return owned.persistent },
+      async resetDemo() { owned.reset() },
       async conversations(offset = 0, options = {}) {
         const state = owned.owner()
         if (!f.count(offset)) throw f.fail('INVALID_INPUT', '잘못된 페이지')

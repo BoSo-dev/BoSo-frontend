@@ -128,3 +128,38 @@ test('실제 알림 계약이 없으면 임의 API와 시연 대체를 사용하
   await assert.rejects(notifications.readAll(), { code: 'NOTIFICATION_API_UNAVAILABLE' })
   assert.equal(requests, 0)
 })
+test('시연 초기화는 현재 계정만 지우고 실제 모드에서는 거부한다', async () => {
+  const { todos, store } = fixture()
+  const first = (await todos.list()).items[0]
+  await todos.complete(first.id, true)
+  const original = store.getState().auth
+  store.setState({ auth: { status: 'authenticated', user: { ...user, id: webcrypto.randomUUID() } } })
+  await todos.resetDemo()
+  store.setState({ auth: original })
+  assert.equal((await todos.detail(first.id)).status, 'completed')
+  await todos.resetDemo()
+  assert.equal((await todos.detail(first.id)).status, 'pending')
+  await assert.rejects(fixture('live').todos.resetDemo(), { code: 'INVALID_INPUT' })
+})
+test('시연 저장은 재생성 후 유지하고 손상·쓰기 실패는 메모리로 처리한다', async () => {
+  const data = new Map()
+  context.localStorage = { getItem: (key) => data.get(key) || null, setItem: (key, value) => data.set(key, value), removeItem: (key) => data.delete(key) }
+  try {
+    const one = fixture().todos
+    const row = (await one.list()).items[0]
+    await one.complete(row.id, true)
+    assert.equal((await fixture().todos.detail(row.id)).status, 'completed')
+    for (const key of data.keys()) data.set(key, '{corrupt')
+    const broken = fixture().todos
+    assert.equal((await broken.detail(row.id)).status, 'pending')
+    assert.equal(broken.persistent, false)
+    context.localStorage.setItem = () => { throw new Error('Quota exceeded') }
+    data.clear()
+    const memory = fixture().todos
+    await memory.complete(row.id, true)
+    assert.equal((await memory.detail(row.id)).status, 'completed')
+    assert.equal(memory.persistent, false)
+    context.localStorage.removeItem = () => { throw new Error('Denied') }
+    await assert.rejects(memory.resetDemo(), { code: 'STORAGE_FAILED' })
+  } finally { delete context.localStorage }
+})

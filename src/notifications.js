@@ -20,6 +20,7 @@
     const notify = () => { for (const listener of [...listeners]) listener() }
     return Object.freeze({
       get persistent() { return owned.persistent },
+      async resetDemo() { owned.reset() },
       subscribe(listener) { listeners.add(listener); return () => listeners.delete(listener) },
       async list(filter = 'all', offset = 0) {
         const state = owned.owner(); available()

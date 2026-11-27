@@ -19,6 +19,7 @@
     const demo = services.mode === 'demo'
     return Object.freeze({
       get persistent() { return owned.persistent },
+      async resetDemo() { owned.reset() },
       async list({ status = 'pending', offset = 0 } = {}, options = {}) {
         const state = owned.owner()
         if (!statuses.includes(status) || !f.count(offset)) throw f.fail('INVALID_INPUT', '잘못된 목록 조건')
