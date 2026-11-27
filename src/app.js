@@ -27,6 +27,22 @@
     window.BoSo.mountNotificationBadge({ notifications, store })
     const noticeElement = document.getElementById('session-notice')
     const logoutButton = document.getElementById('logout-button')
+    const resetButton = window.BoSo.features.button('내 시연 기록 초기화', async () => {
+      if (!window.confirm('현재 시연 계정의 교통 정보·할 일·대화·알림 기록을 초기화할까요?')) return
+      resetButton.disabled = true
+      try {
+        await profile.resetDemo()
+        await todos.resetDemo()
+        await chat.resetDemo()
+        await notifications.resetDemo()
+        await auth.logout()
+        setNotice('현재 시연 계정의 기록을 초기화했습니다.', '#/home')
+        navigate('home')
+      } catch (error) { setNotice(window.BoSo.features.message(error)) }
+      finally { resetButton.disabled = false }
+    }, 'subtle')
+    resetButton.hidden = true
+    document.querySelector('footer').append(resetButton)
     let notice = ''
     let noticeHash = null
     let noticeTimer
@@ -136,6 +152,7 @@
       member.href = authenticated ? '#/profile' : '#/login'
       member.querySelector('[data-member-label]').textContent = authenticated ? '내 정보' : '로그인'
       logoutButton.hidden = !authenticated
+      resetButton.hidden = services.mode !== 'demo' || !authenticated
       logoutButton.disabled = loggingOut
       showNotice()
       if (route?.protected && state.status === 'anonymous') {

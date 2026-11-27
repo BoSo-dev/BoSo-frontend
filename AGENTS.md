@@ -47,3 +47,5 @@
 - 사용자 변경 삭제, 강제 push, 기존 커밋 amend는 임의로 하지 않는다. 공통 파일·공개 설정·계약 변경은 후속 기능 영향을 기록한다.
 - 커밋·PR 제목은 <type>(<scope>): <한국어 설명>이다. 커밋 시 .agents/skills/boso-commit/SKILL.md, PR 작성 시 .agents/skills/boso-pr/SKILL.md를 읽는다. 스킬 읽기는 Git 쓰기 권한을 부여하지 않는다.
 - 지침과 README는 실제 명령·구조와 함께 갱신한다. Python·DB·마이그레이션 전용 규칙을 복사하지 않는다. 충돌 시 사용자 지시를 우선하고 미해결 충돌은 보고한다.
+- 챗봇은 src/chat.js, 알림은 src/notifications.js에서 관리한다. 챗봇 request_id의 재시도 동일성을 유지하고 실제 대화·프로필·To-Do 응답을 브라우저 영구 저장소에 저장하지 않는다. 알림 HTTP 계약이 없는 동안 실제 모드는 안내만 표시한다.
+- 최종 단일 HTML 검증은 소스 트리 밖 파일 직접 열기·네트워크 없는 시연·주요 흐름·모바일·키보드를 포함한다. API 대역 검증과 실제 FastAPI/DB/Gemini 통합 검증 결과를 구분한다.

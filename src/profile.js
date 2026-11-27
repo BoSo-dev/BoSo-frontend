@@ -151,9 +151,7 @@
       async resetDemo() {
         const captured = owner()
         if (services.mode !== 'demo') throw error('INVALID_PROFILE', '시연 모드에서만 초기화할 수 있습니다.')
-        if (persistent) {
-          try { storage.removeItem(key(captured.user.id)) } catch { throw error('DEMO_STORAGE_FAILED', '저장소 삭제 실패') }
-        }
+          try { (storage ?? global.localStorage)?.removeItem(key(captured.user.id)) } catch { throw error('DEMO_STORAGE_FAILED', '저장소 삭제 실패') }
         memory.set(captured.user.id, { values: empty(), updatedAt: null })
         return this.load()
       },
