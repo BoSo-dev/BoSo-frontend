@@ -22,7 +22,9 @@
     const policies = window.BoSo.createPolicies({ services })
     const todos = window.BoSo.createTodos({ auth, services, store })
     const chat = window.BoSo.createChat({ auth, services, store, todos })
-    Object.assign(window.BoSo, { services, store, auth, profile, policies, todos, chat })
+    const notifications = window.BoSo.createNotifications({ auth, services, store })
+    Object.assign(window.BoSo, { services, store, auth, profile, policies, todos, chat, notifications })
+    window.BoSo.mountNotificationBadge({ notifications, store })
     const noticeElement = document.getElementById('session-notice')
     const logoutButton = document.getElementById('logout-button')
     let notice = ''
@@ -145,7 +147,7 @@
         return
       }
       const blocked = (route?.protected && !authenticated) || ((key === 'login' || key === 'signup') && loading)
-      const template = blocked ? 'session-view' : key === 'login' || key === 'signup' ? 'auth-view' : key === 'chat' ? 'chat-view' : key === 'todos' ? 'todos-view' : key === 'profile' ? 'profile-view' : key === 'policies' ? policyDetail ? 'policy-detail-view' : 'policies-view' : key === 'home' ? 'home-view' : 'placeholder-view'
+      const template = blocked ? 'session-view' : key === 'login' || key === 'signup' ? 'auth-view' : key === 'notifications' ? 'notifications-view' : key === 'chat' ? 'chat-view' : key === 'todos' ? 'todos-view' : key === 'profile' ? 'profile-view' : key === 'policies' ? policyDetail ? 'policy-detail-view' : 'policies-view' : key === 'home' ? 'home-view' : 'placeholder-view'
       const previous = store.getState().route
       disposePage()
       disposePage = () => {}
@@ -157,6 +159,7 @@
         main.querySelector('[data-retry-session]').addEventListener('click', () => { void auth.initialize() })
         main.querySelector('.session-actions a').href = '#/login?next=' + encodeURIComponent(key)
       } else if (template === 'auth-view') bindAuthForm(key, next)
+      else if (template === 'notifications-view') disposePage = window.BoSo.mountNotifications(main, { notifications, services, store })
       else if (template === 'chat-view') disposePage = window.BoSo.mountChat(main, { chat, services, store, profile })
       else if (template === 'todos-view') disposePage = window.BoSo.mountTodos(main, { todos, services, store })
       else if (template === 'profile-view') disposePage = window.BoSo.mountProfile(main, { profile, services, store })
