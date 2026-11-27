@@ -10,15 +10,17 @@ HTML·CSS·Vanilla JavaScript를 사용하며 Node 내장 통합기로 단일 HT
 - src/auth.js: 서버 인증 계약·토큰 수명·시연 계정 처리
 - src/profile.js: 프로필 계약·시연 저장·마이페이지 화면 연결
 - src/policies.js: 정책 서비스·시연 자료·홈/목록/상세 화면 연결
+- src/feature-kit.js: DOM·요청 취소·사용자별 시연 저장 공통 처리
+- src/todos.js, src/chat.js, src/notifications.js: 기능별 계약·시연·화면
 - src/styles.css, src/assets/: 기존 디자인과 캐릭터
 - scripts/build.mjs, scripts/serve.mjs: 통합 생성과 로컬 확인
 - tests/foundation.test.mjs: Node 내장 테스트
 
-빈 도메인 폴더나 공통 UI JS는 만들지 않는다. services → auth → profile → policies → app 순서로 일반 script를 연결한다. 후속 업무 요청·시연 처리는 해당 기능에 두고 공통 클라이언트에 도메인 분기를 늘리지 않는다.
+빈 도메인 폴더나 공통 UI JS는 만들지 않는다. services → auth → profile → policies → feature-kit → todos → chat → notifications → app 순서로 일반 script를 연결한다. 후속 업무 요청·시연 처리는 해당 기능에 두고 공통 클라이언트에 도메인 분기를 늘리지 않는다.
 
 ## 화면과 상태
 
-경로는 #/home, #/login, #/signup, #/todos, #/policies, #/chat, #/profile, #/notifications다. 홈·인증·프로필 외에는 준비 안내다. todos/chat/profile/notifications는 로그인 확인 후 표시한다. 비로그인은 로그인으로 이동하고 next는 내부 보호 경로의 허용 목록으로만 복귀한다. 서버 복원 중에는 대기, 연결 실패 시에는 재시도·로그인 진입을 제공한다. 잘못된 주소는 별도 안내하며 BrowserRouter·서버 fallback은 필요하지 않다.
+경로는 #/home, #/login, #/signup, #/todos, #/policies, #/chat, #/profile, #/notifications다. 정책·To-Do·챗봇·알림 시연을 포함한다. 실제 정책·알림 HTTP는 준비 안내다. todos/chat/profile/notifications는 로그인 확인 후 표시한다. 비로그인은 로그인으로 이동하고 next는 내부 보호 경로의 허용 목록으로만 복귀한다. 서버 복원 중에는 대기, 연결 실패 시에는 재시도·로그인 진입을 제공한다. 잘못된 주소는 별도 안내하며 BrowserRouter·서버 fallback은 필요하지 않다.
 
 main 한 곳에 template을 복제하고 외부 값은 textContent로 바인딩한다. card·button·badge·page-heading·empty-state CSS 클래스로 UI를 재사용한다. 헤더·푸터는 이동 때 다시 만들지 않는다. 최종 와이어프레임의 주요 메뉴 4개와 알림·내 정보 진입점을 반영했다.
 
