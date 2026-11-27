@@ -23,7 +23,7 @@
             <a class="nav-link" href="#/chat" data-route="chat">AI 챗봇</a>
           </nav>
           <div class="header-actions">
-            <a class="icon-link" href="#/notifications" data-route="notifications" aria-label="알림">
+            <a class="icon-link" href="#/notifications" data-route="notifications" aria-label="알림"><span id="notification-count" class="notification-count" hidden></span>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" /></svg>
             </a>
             <a class="member-link" href="#/profile" data-route="profile">
@@ -188,6 +188,7 @@
         </div>
       </section>
     </template>
+    <template id="notifications-view"><div data-feature-root></div></template>
     <template id="placeholder-view">
       <div class="page-heading"><h1 data-heading></h1><p data-description></p></div>
       <section class="card">
@@ -209,6 +210,7 @@
     <script defer src="./src/feature-kit.js"></script>
     <script defer src="./src/todos.js"></script>
     <script defer src="./src/chat.js"></script>
+    <script defer src="./src/notifications.js"></script>
     <script defer src="./src/app.js"></script>
   </body>
 </html>

@@ -345,3 +345,15 @@ h1, h2, h3, p { word-break: keep-all; overflow-wrap: anywhere; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; scroll-behavior: auto !important; }
 }
+.icon-link { position: relative; }
+.notification-count { position: absolute; top: -5px; right: -6px; min-width: 18px; padding: 2px 4px; border-radius: 20px; color: #fff; background: #315de5; font-size: 10px; text-align: center; }
+.notification-row { padding: 24px 12px; border-bottom: 1px solid var(--color-border, #e5e7eb); }
+.notification-row--unread { background: #f3f6ff; }
+.notification-row h2 { font-size: 18px; }
+.notification-row p { line-height: 1.7; }
+.notification-row { padding: 1.25rem; border-bottom: 1px solid var(--border, #e7eaf1); border-radius: 12px; }
+.notification-row--unread { background: #eff5ff; }
+.notification-row h2 { margin: .7rem 0; font-size: 1.1rem; overflow-wrap: anywhere; }
+.notification-row h2 a { color: inherit; }
+.icon-link { position: relative; }
+.notification-count { position: absolute; top: -5px; right: -7px; min-width: 19px; border-radius: 20px; background: #315ee7; color: white; font-size: 11px; text-align: center; padding: 2px; }
