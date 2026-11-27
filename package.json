@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "node scripts/serve.mjs",
     "lint": "eslint . --max-warnings=0",
-    "test": "node --test tests/foundation.test.mjs",
+    "test": "node --test tests/foundation.test.mjs tests/features.test.mjs",
     "check": "npm run lint && npm test && npm run build && git diff --check",
     "build": "node scripts/build.mjs",
     "preview": "node scripts/serve.mjs --preview"
