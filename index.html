@@ -28,11 +28,13 @@
             </a>
             <a class="member-link" href="#/profile" data-route="profile">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="7" r="4" /><path d="M4 21v-2a8 8 0 0 1 16 0v2" /></svg>
-              내 정보
+              <span data-member-label>로그인</span>
             </a>
+            <button class="member-link" id="logout-button" type="button" hidden>로그아웃</button>
           </div>
         </div>
       </header>
+      <div class="container"><p id="session-notice" class="session-notice" role="status" hidden></p></div>
       <main id="main-content" class="main-content container" tabindex="-1"></main>
       <footer class="site-footer">
         <div class="footer-inner container">
@@ -87,6 +89,47 @@
         </div>
       </section>
     </template>
+    <template id="auth-view">
+      <section class="auth-card card" aria-labelledby="auth-title">
+        <p class="auth-brand">BoSo</p>
+        <h1 id="auth-title" data-auth-title>로그인</h1>
+        <p class="auth-description" data-auth-description>나에게 필요한 교통 혜택을 함께 살펴봐요.</p>
+        <p class="auth-demo-note" data-demo-note hidden>시연 모드입니다. 실제 개인정보 대신 예시 이메일과 비밀번호를 사용해 주세요. 만든 계정은 이 화면을 새로고침하면 초기화됩니다.</p>
+        <p class="form-message" data-auth-message role="alert" hidden></p>
+        <form data-auth-form method="post">
+          <fieldset class="auth-fields">
+            <legend class="visually-hidden">계정 정보 입력</legend>
+            <div class="form-field">
+              <label for="auth-email">이메일</label>
+              <input id="auth-email" name="email" type="email" maxlength="320" autocomplete="username" placeholder="you@example.com" required />
+            </div>
+            <div class="form-field">
+              <label for="auth-password">비밀번호</label>
+              <input id="auth-password" name="password" type="password" autocomplete="current-password" aria-describedby="password-help" required />
+              <p class="field-help" id="password-help">15~128자로 입력해 주세요. 공백도 비밀번호에 포함됩니다.</p>
+            </div>
+            <div class="form-field" data-confirm-field hidden>
+              <label for="auth-confirmation">비밀번호 확인</label>
+              <input id="auth-confirmation" name="confirmation" type="password" autocomplete="new-password" />
+            </div>
+            <button class="button button--primary auth-submit" type="submit" data-auth-submit>로그인</button>
+            <button class="button button--secondary" type="button" data-demo-login hidden>시연 계정으로 둘러보기</button>
+          </fieldset>
+        </form>
+        <p class="auth-switch"><span data-switch-description>아직 계정이 없으신가요?</span> <a href="#/signup" data-switch-link>회원가입</a></p>
+      </section>
+    </template>
+    <template id="session-view">
+      <section class="auth-card card" aria-labelledby="session-title">
+        <span class="badge badge--blue">BoSo 계정</span>
+        <h1 id="session-title" data-session-title>로그인 정보를 확인하고 있어요</h1>
+        <p class="auth-description" data-session-description>잠시만 기다려 주세요.</p>
+        <div class="session-actions" data-session-actions hidden>
+          <button class="button button--primary" type="button" data-retry-session>다시 연결</button>
+          <a class="button button--secondary" href="#/login">로그인 화면</a>
+        </div>
+      </section>
+    </template>
     <template id="placeholder-view">
       <div class="page-heading"><h1 data-heading></h1><p data-description></p></div>
       <section class="card">
@@ -102,6 +145,7 @@
     <noscript><p class="container">BoSo를 이용하려면 브라우저에서 JavaScript를 허용해 주세요.</p></noscript>
     <script id="boso-config" type="application/json">{"mode":"auto","apiBaseUrl":"http://localhost:8000"}</script>
     <script defer src="./src/services.js"></script>
+    <script defer src="./src/auth.js"></script>
     <script defer src="./src/app.js"></script>
   </body>
 </html>
