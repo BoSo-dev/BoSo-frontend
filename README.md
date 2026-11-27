@@ -1,139 +1,71 @@
 # BoSo-frontend
 
-K-패스, 기후동행카드 등 교통카드 정책을 통합하여 정책 요약, 개인별 정책 변경 To-Do, AI 챗봇을 제공하는 BoSo의 프론트엔드 저장소입니다.
+K-패스·기후동행카드 등 교통 정책 요약, 개인별 To-Do, AI 챗봇을 제공할 BoSo의 프론트엔드입니다. 단일 HTML 제출을 위해 HTML + CSS + Vanilla JavaScript로 전환했습니다.
 
-현재 `develop`에는 개발 계획의 0단계인 공통 실행·개발·검증 기반을 구성했습니다. 실제 서비스 기능과 UI는 후속 기능 브랜치에서 구현합니다.
+현재는 공통 헤더·푸터·반응형 홈, 해시 메뉴 이동, API·상태 기반과 통합 파일 생성만 구현했습니다. 실제 회원·정책·To-Do·챗봇·알림 및 시연 데이터는 후속 작업입니다.
 
-## 기술 스택
+## 실행
 
-- React 19, Vite 8, TypeScript 6(strict), React Router 7, 기본 CSS
-- ESLint 10·typescript-eslint·React Hooks/Refresh 규칙
-- Vitest 5·jsdom 26·React Testing Library
-- npm 및 `package-lock.json`으로 설치 버전 관리
-- Node.js 기준 버전: `.nvmrc`의 `22.14.0`. 지원 범위: 22.13 이상인 22.x, 24.x 또는 26 이상, npm 10 이상
-
-초기 TypeScript 7은 `typescript-eslint`의 공식 지원 범위(`>=4.8.4 <6.1.0`) 밖이므로 6.0.3으로 조정했습니다. 설치된 Node 22.14를 유지하기 위해 Router 7과 jsdom 26을 선택했습니다. 최신 Router 8·jsdom 31은 더 높은 Node 패치 버전을 요구합니다. 백엔드에는 별도 프론트엔드 스택 지정이 없습니다.
-
-## 빠른 시작
-
-명령은 `BoSo-frontend` 루트에서 실행합니다. 백엔드·DB 없이 기본 화면을 실행할 수 있습니다.
-
-```sh
-npm ci
-npm run dev
-```
-
-개발 화면은 <http://localhost:5173>입니다. 서버는 localhost에 바인딩하고, 포트가 사용 중이면 자동 변경 대신 오류로 종료합니다. 종료는 `Ctrl+C`입니다. 미등록 경로에서는 안내와 홈 복귀 링크를 제공합니다.
-
-PowerShell 실행 정책으로 `npm.ps1`이 차단되면 정책을 변경하지 않고 `npm.cmd`를 사용합니다.
+Node.js 기준 버전은 `.nvmrc`의 22.14.0이며 npm 10 이상을 사용합니다. 프론트엔드 루트에서 실행합니다.
 
 ```powershell
 npm.cmd ci
 npm.cmd run dev
 ```
 
-의존성 변경 시 `npm install`로 `package.json`과 `package-lock.json`을 함께 갱신하고, 복제·재설치는 `npm ci`를 사용합니다.
+`http://localhost:5173`에서 확인합니다. 수정 후 브라우저를 새로고침하고 종료는 Ctrl+C입니다. macOS/Linux에서는 npm을 사용합니다. 포트 충돌 시 자동 변경하지 않습니다.
 
-## 검증과 빌드
-
-```sh
-npm run check
-npm run preview
-```
-
-`check`는 린트 → 타입 검사 → 테스트 → 빌드 → Git 공백 검사를 순서대로 실행하며 실패 시 중단합니다. PowerShell에서는 `npm.cmd run check`를 사용합니다.
-
-| 명령 | 용도 |
-| --- | --- |
-| `npm run lint` | ESLint, 경고도 실패 처리 |
-| `npm run typecheck` | 앱·Vite·Vitest 설정의 TypeScript 검사 |
-| `npm test` | Vitest 일회 실행 |
-| `npm run test:watch` | 테스트 감시 |
-| `npm run build` | 타입 검사 후 `dist/` 빌드 |
-| `npm run preview` | 빌드 결과를 `http://localhost:4173`에서 확인 |
-
-preview는 운영 배포용 서버가 아닙니다. API 호출이 없는 기본 화면만 제공하므로 preview 포트의 백엔드 CORS는 추가하지 않았습니다. 배포 시 BrowserRouter의 직접 접근·새로고침을 위한 SPA fallback을 설정해야 합니다.
-
-## 구조와 개발 순서
-
-```text
-src/
-  main.tsx            # React·BrowserRouter 진입점
-  app/                # 앱 조립·라우팅·전역 스타일
-  pages/              # 기본 확인 화면·미등록 경로 안내
-  shared/api/         # 공통 JSON 요청·오류 처리
-  shared/config/      # 공개 환경변수 검증
-  test/               # 테스트 공통 설정
-index.html            # 한국어 HTML 진입점
-vite.config.ts        # React 플러그인·개발/preview 서버
-vitest.config.ts      # 테스트 실행 환경
-eslint.config.mjs     # 린트 규칙
-AGENTS.md             # 공통 개발·보안·협업 규칙
-.agents/skills/       # 커밋·PR 스킬
-docs/                 # 구조·개발 계획
-.env.example          # 공개 API 주소 예시
-```
-
-의존 방향은 `app → pages → features → shared`입니다. `features/`와 `shared/ui/`는 실제 기능·공통 UI를 구현할 때 생성합니다. 테스트는 대상 옆에 배치합니다. UTF-8/LF와 공백 2칸은 `.editorconfig`, Git 줄바꿈은 `.gitattributes`로 정의합니다.
-
-- [개발 지침](AGENTS.md)
-- [구조·라우팅·API 사용 기준](docs/architecture.md)
-- [개발 순서·담당·선행 조건](docs/development-plan.md)
-
-현재 허용 범위는 기존 `BoSo-frontend/develop`뿐이며, 이전 `frontend-bootstrap` 설정 계획은 현재 0단계로 대체했습니다. 다음 단계는 개발자 B의 `feat/common-layout`입니다. 이후 B는 인증 → 프로필 → 개인별 To-Do, A는 정책 목록 → 상세 → 챗봇과 웹 내부 알림을 맡습니다. 이번 작업에서는 해당 브랜치를 생성·전환하지 않습니다.
-
-## 백엔드 연동과 환경변수
-
-형제 `BoSo-server`의 `AGENTS.md`, README, 구조·개발·브랜치·하네스 문서, Skills와 실제 설정·라우터·오류 코드를 참고했습니다. 백엔드는 FastAPI·SQLAlchemy·Alembic·Supabase PostgreSQL 기반입니다. Python·DB 구조와 검사 스크립트·CI는 복사하지 않았으며 백엔드 파일은 수정하지 않습니다.
-
-| 항목 | 실제 백엔드 코드 기준 |
-| --- | --- |
-| 로컬 서버 | `http://localhost:8000` |
-| 개발용 Swagger / OpenAPI | `/docs`, `/openapi.json`(production에서는 비활성화) |
-| 상태 확인 | `GET /health/live`, `GET /health/ready`(DB 연결 검사) |
-| 기능 API | `/api/v1/*`에 빈 도메인 라우터만 연결, 업무 엔드포인트 미구현 |
-| CORS 기본 Origin | `http://localhost:3000`, `http://localhost:5173` |
-| 인증 관련 CORS | `Authorization` 허용, `allow_credentials=False` |
-| 오류 필드 | `code`, `message`, `details`, `request_id` |
-| 요청 추적 | `X-Request-ID` 응답 헤더(CORS 노출) |
-
-선택적으로 공개 설정 예시를 복사합니다. 기존 `.env`는 덮어쓰지 않습니다.
+## 검증·빌드·제출
 
 ```powershell
-if (-not (Test-Path .env)) { Copy-Item .env.example .env }
+npm.cmd run check
+npm.cmd run preview
 ```
 
-`VITE_API_BASE_URL`은 경로·인증정보·쿼리·fragment 없는 HTTP(S) Origin이며 기본값은 `http://localhost:8000`입니다. `/api/v1`을 포함하지 않습니다. 앱 시작 시 검증하며 변경 후 개발 서버 재시작·운영 재빌드가 필요합니다.
+check는 ESLint → Node 내장 테스트 → 통합 빌드 → Git 공백 검사를 실행합니다. preview는 빌드 파일을 `http://localhost:4173`에서 보여줍니다. 빌드만 하려면 `npm.cmd run build`를 사용합니다.
 
-`src/shared/api`는 fetch 기반 JSON 클라이언트입니다. `api<T>(path, { method, json, headers, signal })`로 호출하며 경로는 `/`로 시작해야 합니다. 기능 경로는 실제 OpenAPI 확인 후 지정하고 현재 화면에서 자동 API 요청은 하지 않습니다. 프록시는 사용하지 않으며 연동 시 실제 `CORS_ORIGINS`를 확인합니다.
+**제출 파일은 `dist/BoSo.html` 하나**입니다. CSS·일반 JS·PNG를 포함하므로 복사 후 더블클릭으로 열 수 있습니다. 열람자에게 Node.js나 node_modules는 필요 없습니다. 개발용 index.html과 과거 Vite 출력은 제출하지 않습니다.
 
-`ApiError`는 `status`, `code`, `message`, `details`, `requestId`를 제공합니다. 비 JSON 성공 응답은 형식 오류, 204·205는 `undefined`이며 네트워크·취소 오류는 그대로 전달합니다. 토큰 저장·자동 갱신·재시도와 쿠키 전달은 구현하지 않았습니다. 제네릭 타입은 런타임 응답 검증을 대신하지 않습니다.
+현재 결과물은 공통 화면과 이동이 동작하는 기반입니다. 최종 핵심 서비스 기능이 완성됐다는 뜻은 아니며 후속 개발과 오프라인 검증이 필요합니다.
 
-`.env`·`.env.*`는 Git에서 제외합니다. `VITE_*`는 브라우저 번들에 공개되므로 DB 주소, Supabase service role 키, JWT 서명 키, 외부 AI 비밀 키를 넣지 않습니다. 서버의 `.env`를 복사하지 않습니다.
-
-## 커밋·PR 스킬
-
-- [boso-commit](.agents/skills/boso-commit/SKILL.md): diff 검토·관련 검증·경로별 staging·요청된 커밋
-- [boso-pr](.agents/skills/boso-pr/SKILL.md): base·head·실제 diff 확인·한국어 초안·허용된 게시/갱신
+## 최소 구조
 
 ```text
-$boso-commit 현재 변경을 검증하고 커밋해줘.
-$boso-pr 현재 브랜치의 PR 제목과 본문을 작성해줘.
+index.html                 공통 레이아웃·화면 template·공개 설정
+src/app.js                 해시 이동·DOM 화면 조립
+src/services.js            API·실행 모드·메모리 상태
+src/styles.css             기존 디자인·공통 UI·반응형 스타일
+src/assets/                기존 캐릭터 PNG 2개
+scripts/build.mjs          단일 HTML 생성
+scripts/serve.mjs          로컬 개발·preview 서버
+tests/foundation.test.mjs   API·모드·상태·통합 파일 검증
 ```
 
-두 번째 요청은 초안 작성만 허용합니다. commit·push·PR 게시·merge는 각각 사용자 요청과 기존 허용 범위를 따릅니다. 일반 흐름은 `작업 브랜치 → develop → main`, 제목은 `<type>(<scope>): <한국어 설명>`입니다. 코드·설정 변경은 `npm run check`, 문서·스킬 변경은 링크·명령·공백과 사용 가능한 스킬 검증 도구로 확인합니다.
+프레임워크·Router·번들러는 사용하지 않습니다. ESLint만 개발 의존성으로 유지하고 테스트·빌드는 Node 내장 기능을 사용합니다. 홈 외의 메뉴는 준비 안내입니다.
 
-## 검증 한계와 남은 작업
+## 실행 모드와 API
 
-테스트는 라우팅과 공통 API·설정의 정상·오류·경계 동작을 확인하며 API 요청은 fetch 대역입니다. 실제 백엔드·인증·DB·배포·브라우저 E2E·반응형 통합 검증을 완료했다는 의미가 아닙니다. 로컬 검증은 자동화했지만 GitHub CI·별도 Agent 설정·배포·Docker는 구성하지 않았습니다.
+index.html의 boso-config에 공개 설정을 둡니다.
 
-설치 시 `npm audit`에서 린트 도구의 전이 의존성 `minimatch`에 중간 등급 취약점이 보고됐습니다. 현재 요구 범위는 10.x이고 수정 버전은 11.0.1 이상이므로 강제 major override나 무리한 도구 하향 변경은 적용하지 않았습니다. 개발 도구 갱신 시 재확인해야 합니다. 운영 의존성은 `npm audit --omit=dev`로 별도 확인합니다.
+```json
+{"mode":"auto","apiBaseUrl":"http://localhost:8000"}
+```
 
-## 공식 참고
+auto는 HTTP(S)에서 서버 연동 모드, file://에서는 시연 모드입니다. demo로 명시할 수도 있습니다. 파일 직접 실행은 live 설정에도 항상 시연 모드이며 네트워크 요청을 보내지 않습니다. 현재 시연 요청은 DEMO_NOT_IMPLEMENTED를 반환하고 기능별 로컬 처리는 후속 구현합니다. 서버 연결 실패를 시연 성공으로 바꾸지 않습니다. 하단의 모드 표시는 실제 연결 성공을 뜻하지 않습니다.
 
-- [Vite 시작 안내](https://vite.dev/guide/)
-- [Vite 환경변수](https://vite.dev/guide/env-and-mode)
-- [React Router 선언형 설치](https://reactrouter.com/start/declarative/installation)
-- [typescript-eslint 설정](https://typescript-eslint.io/getting-started/)
-- [Vitest 시작 안내](https://vitest.dev/guide/)
-- [React Testing Library 설정](https://testing-library.com/docs/react-testing-library/setup/)
+HTTP 클라이언트는 쿠키 전달(credentials: include), JSON·오류 처리와 취소 신호를 지원합니다. 실제 인증·CSRF 주입·토큰 갱신·보호 화면은 미구현입니다. 실제 업무 경로는 서버 코드와 OpenAPI 확인 후 추가합니다.
+
+실제 회원 인증·DB·Gemini는 FastAPI와 네트워크가 필요합니다. 파일 origin은 null이므로 현재 서버 Origin·CORS·쿠키 정책과 맞지 않습니다. 서버 보안을 완화하지 않고 HTTP(S)에서 실제 연동을 검증합니다. 로컬 API 개발에는 서버 기본 CORS와 일치하는 localhost:5173을 사용합니다. 127.0.0.1 또는 preview의 4173은 별도 origin이므로 기본 허용 대상이 아닙니다. 오프라인 제출은 명시적인 샘플 데이터로 핵심 흐름을 구현해야 합니다.
+
+API 주소는 경로 없는 HTTP(S) origin만 허용합니다. 설정은 전부 공개되므로 DB 비밀번호·JWT 서명 키·Gemini 키를 넣지 않습니다. Vite .env.example은 제거했고 .env 자동 로딩은 없습니다. 기존 개인 .env는 수정하지 않습니다. 설정 변경 후 재빌드하세요.
+
+## 개발 규칙
+
+- [개발 지침](AGENTS.md)
+- [구조와 확장](docs/architecture.md)
+- [브랜치·담당·선행 조건](docs/development-plan.md)
+- [커밋 스킬](.agents/skills/boso-commit/SKILL.md), [PR 스킬](.agents/skills/boso-pr/SKILL.md)
+
+UTF-8·LF·공백 2칸을 사용합니다. 백엔드 공통 오류·보안·Git 규칙을 참고하되 Python·DB 설정은 도입하지 않습니다. 형제 서버와 기획 원본은 수정하지 않습니다. commit·push·merge는 자동 수행하지 않습니다.
+
+API 테스트는 대역이며 실제 인증·DB·Gemini 통합 성공을 의미하지 않습니다. Docker·운영 배포·CI·추가 Agent 환경은 이번 범위에 없습니다.

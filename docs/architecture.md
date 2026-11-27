@@ -1,48 +1,42 @@
 # 프론트엔드 구조
 
-React + Vite SPA로 구성하고 React Router의 선언형 라우팅을 사용한다. 서버 업무 규칙과 인증 정책은 실제 OpenAPI 계약을 기준으로 연결한다.
+HTML·CSS·Vanilla JavaScript를 사용하며 Node 내장 통합기로 단일 HTML을 만든다. React·Vite·TypeScript·React Router·Vitest는 제거했다. 기존 공통 레이아웃·CSS·PNG는 전환해 재사용했다.
 
-## 배치와 의존 방향
+## 배치와 확장
 
-```text
-src/
-  main.tsx              # React·BrowserRouter 진입점
-  app/                  # 앱 조립·라우팅·전역 스타일
-  pages/                # URL에 연결되는 화면
-    home/               # 현재 기본 실행 확인 화면
-    not-found/          # 미등록 경로 안내
-  shared/
-    api/                # 공통 JSON 요청·오류·서버 주소 연결
-    config/             # 공개 환경변수 검증
-  test/                 # 테스트 공통 설정
-```
+- index.html: 공통 헤더·내비게이션·푸터, home/placeholder template, 공개 JSON 설정
+- src/app.js: 해시 경로·DOM 조립·본문 포커스·현재 메뉴·제목
+- src/services.js: API·공통 오류·실행 모드·메모리 상태
+- src/styles.css, src/assets/: 기존 디자인과 캐릭터
+- scripts/build.mjs, scripts/serve.mjs: 통합 생성과 로컬 확인
+- tests/foundation.test.mjs: Node 내장 테스트
 
-의존 방향은 `app → pages → features → shared`를 기본으로 한다. 현재 기능이 없으므로 `features/`는 생성하지 않았다. 기능 구현 시 `features/auth`, `features/user-profile`, `features/personalized-todo` 등 해당 기능 디렉터리를 추가한다. 다른 기능의 내부 파일을 직접 참조하기보다 필요한 계약을 명시적으로 공유한다. `shared`는 `pages`, `features`, `app`을 import하지 않는다.
+빈 도메인 폴더나 공통 UI JS는 만들지 않는다. 기능 규모에 따라 src/auth.js 등을 추가하고 일반 script를 app 진입점보다 먼저 연결한다. 업무 요청·시연 처리는 해당 기능에 두고 공통 클라이언트에 도메인 분기를 늘리지 않는다.
 
-`feat/common-layout`에서는 `app`에 공통 레이아웃을 연결하고 재사용 UI를 `shared/ui`에 추가한다. 페이지는 기능을 조합하며 공통 API 클라이언트에 도메인 로직을 넣지 않는다. 사용처 없는 빈 폴더·공용 컴포넌트는 미리 만들지 않는다.
+## 화면과 상태
 
-컴포넌트 파일은 PascalCase, 그 외 TypeScript 파일은 camelCase를 사용한다. 테스트는 검증 대상 옆에 `*.test.ts`, `*.test.tsx`로 둔다. 현재는 상대 경로 import를 사용한다.
+경로는 #/home, #/todos, #/policies, #/chat, #/profile, #/notifications다. 홈 외에는 준비 안내이며 잘못된 주소도 안내한다. BrowserRouter와 서버 fallback은 필요하지 않다. 후속 화면은 template과 라우트 정의를 확장한다.
 
-## 라우팅
+main 한 곳에 template을 복제하고 외부 값은 textContent로 바인딩한다. card·button·badge·page-heading·empty-state CSS 클래스로 UI를 재사용한다. 헤더·푸터는 이동 때 다시 만들지 않는다. 최종 와이어프레임의 주요 메뉴 4개와 알림·내 정보 진입점을 반영했다.
 
-현재 등록 경로는 `/`와 미등록 경로 처리(`*`)뿐이다. 로그인·정책·To-Do 등 서비스 URL은 기능 구현 시 합의해 추가한다. 기본 확인 화면은 서비스 홈 UI가 아니다. 인증 상태·보호 경로·토큰 저장은 아직 구현하지 않았다.
+BoSo.store는 getState/setState/subscribe를 제공한다. 얕은 불변 스냅샷이며 중첩 객체도 교체한다. 새로고침 시 초기화하고 인증·localStorage 영속화는 아직 없다. 후속 시연 저장에는 버전·초기화 방법을 두고 실제 토큰과 분리한다.
 
-BrowserRouter를 사용하므로 운영 호스팅은 직접 접근·새로고침 시 SPA의 `index.html`로 fallback해야 한다. 해당 배포 설정은 `chore/frontend-deploy`에서 검증한다.
+## 서비스와 보안
 
-## 환경변수와 API
+boso-config JSON은 mode(auto/demo/live), apiBaseUrl(기본 http://localhost:8000)을 제공한다. 주소는 HTTP(S) origin만 허용한다. 전부 공개되므로 비밀정보는 금지하며 .env 자동 주입은 없다.
 
-- `VITE_API_BASE_URL`은 `/api/v1`을 포함하지 않는 백엔드 Origin이다. 생략하면 `http://localhost:8000`이다. 경로·인증정보·쿼리·fragment가 있는 값은 거부한다.
-- 공개 변수만 `.env.example`에 두고 `.env`와 모드별 파일은 커밋하지 않는다. Vite의 환경변수는 빌드 시 반영된다.
-- `shared/api`의 `api<T>(path, options)`를 사용한다. `path`는 `/`로 시작하는 내부 경로이며 실제 서버 계약을 확인한 뒤 작성한다.
-- `options.json`으로 JSON을 전달하고 헤더·`AbortSignal`을 지정할 수 있다. 인증 토큰을 자동 저장·주입·갱신하지 않는다. 쿠키는 전달하지 않으며 자동 재시도·redirect를 허용하지 않는다.
-- `ApiError`는 HTTP 상태와 `code`, `message`, `details`, `requestId`를 제공한다. `requestId`는 서버의 `request_id` 또는 `X-Request-ID`에서 가져온다. 비 JSON 오류는 원문을 노출하지 않는 기본 오류로 처리한다.
-- 204·205는 `undefined`, JSON이 아닌 성공 응답은 `INVALID_RESPONSE`다. 네트워크 실패와 취소는 fetch 오류를 그대로 전달해 HTTP 오류와 구분한다.
-- 응답 타입 `T`는 정적 타입이며 런타임 스키마 검증이 아니다. 기능별 계약이 정해지면 필요한 검증을 해당 기능에서 추가한다. 파일·스트리밍 응답은 현재 JSON 클라이언트의 범위 밖이다.
+BoSo.services는 mode와 request(path, options)를 제공한다. 파일은 항상 demo, HTTP(S) auto는 live다. demo 요청은 현재 미구현 오류이며 기능별 로컬 처리를 후속 추가한다. live 오류를 시연 성공으로 숨기지 않는다. 현재 화면은 API를 호출하지 않는다.
 
-현재 구현된 서버 경로는 `GET /health/live`, `GET /health/ready`다. 후자는 DB 연결을 검사한다. 기능 API는 `/api/v1/*`에 빈 라우터만 있으며 경로를 추측해 구현하지 않는다. 서버의 실제 호출은 이번 기반 테스트에서 수행하지 않는다.
+HTTP 클라이언트는 서버 내부 경로, JSON·헤더·AbortSignal, 쿠키 전달, 빈 응답과 공통 오류를 처리한다. 외부 origin·redirect·자동 재시도는 허용하지 않는다. ApiError는 status/code/message/details/requestId를 제공한다. 비 JSON 오류 원문은 표시하지 않으며 네트워크·취소 오류는 그대로 전달한다. 도메인 응답 검증은 기능 구현 시 추가한다.
 
-## 검증
+서버의 /api/v1 라우터와 실제 기능 모듈·OpenAPI로 계약을 확인한다. 회원·정책 등 기능이 있으므로 빈 라우터뿐이라는 과거 설명은 적용하지 않는다. FastAPI·DB·Gemini는 서버에 유지하며 이 전환에서 업무 API를 추정하거나 호출하지 않는다.
 
-`npm run check`는 린트 → 타입 검사 → 테스트 → 빌드 → Git 공백 검사 순서로 실패 시 중단한다. ESLint는 TypeScript·React Hooks·React Refresh 권장 규칙을 사용한다. 스타일은 `.editorconfig`와 기존 코드 규칙을 따르며 별도 formatter는 추가하지 않았다.
+인증은 Bearer·refresh 쿠키·CSRF·허용 Origin 등 현행 계약을 함께 검증해야 한다. credentials: include만으로 로그인은 완성되지 않는다. 파일의 null origin·쿠키 제약을 이유로 백엔드 보안을 완화하지 않는다. 직접 실행은 시연 데이터로 핵심 흐름을 제공하고 실제 인증·DB·AI는 HTTP(S)에서 검증한다.
 
-Vitest·jsdom·React Testing Library로 미등록 경로에서 홈 복귀, 공개 설정 검증, JSON·빈 응답·공통 오류·네트워크 실패·취소를 검사한다. API 테스트는 fetch 대역을 사용하며 `/test`는 실제 업무 API가 아니다. 실제 백엔드 통합, 브라우저 E2E와 반응형 검증은 후속 단계다.
+## 통합·검증
+
+통합기는 CSS link와 일반 script를 인라인으로 바꾸고 PNG를 data URI로 넣는다. 동일 입력은 동일 출력이며 결과는 dist/BoSo.html이다. 외부 파일·프로젝트 밖 경로·ES module·CSS url/@import는 오류로 중단한다. HTML은 이중따옴표 속성과 ./ 경로를 유지한다.
+
+dev는 매 요청마다 통합하며 preview는 디스크 결과를 보여준다. 둘 다 127.0.0.1 개발 서버이고 임의 파일·API 프록시를 제공하지 않는다. 자동 새로고침은 없다. 과거 dist 출력은 자동 삭제하지 않으며 제출 시 BoSo.html만 선택한다.
+
+npm run check는 린트·Node 테스트·빌드·공백을 검사한다. 파일 모드 네트워크 차단, 요청·오류·취소·상태, CSS/JS/PNG 내장과 외부 참조 거부를 테스트한다. 실제 서버 통합과 최종 핵심 기능 시연은 후속 단계다. 화면은 file·HTTP·모바일·키보드도 확인한다.
