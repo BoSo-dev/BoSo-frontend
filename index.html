@@ -119,6 +119,46 @@
         <p class="auth-switch"><span data-switch-description>아직 계정이 없으신가요?</span> <a href="#/signup" data-switch-link>회원가입</a></p>
       </section>
     </template>
+    <template id="profile-view">
+      <section class="profile-page" aria-labelledby="profile-title">
+        <div class="page-heading"><h1 id="profile-title">내 정보</h1><p>나에게 필요한 교통 혜택을 위해 정보를 관리해요.</p></div>
+        <section class="card profile-identity" aria-label="계정 정보">
+          <span class="profile-avatar" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="7" r="4" /><path d="M4 21v-2a8 8 0 0 1 16 0v2" /></svg></span>
+          <div><h2>BoSo 회원</h2><p data-profile-email></p></div>
+        </section>
+        <p class="auth-demo-note" data-profile-demo hidden>시연 정보입니다. 실제 개인정보 대신 예시를 입력해 주세요. 로그인은 새로고침 시 초기화되며, 이 시연 계정의 교통 정보만 현재 브라우저에 저장됩니다.</p>
+        <p class="profile-feedback" data-profile-feedback role="status" tabindex="-1">교통 정보를 불러오고 있어요.</p>
+        <button class="button button--secondary" type="button" data-profile-retry hidden>다시 불러오기</button>
+        <section class="card profile-panel" data-profile-summary hidden aria-labelledby="transport-title">
+          <div class="section-heading"><h2 id="transport-title">내 교통 정보</h2><span class="badge" data-profile-completeness></span></div>
+          <p class="field-help" data-profile-missing></p>
+          <dl class="profile-details">
+            <div><dt>생년월일</dt><dd data-profile-birth></dd></div>
+            <div><dt>나이</dt><dd data-profile-age></dd></div>
+            <div><dt>거주 지역</dt><dd data-profile-region></dd></div>
+            <div><dt>현재 이용 중인 카드</dt><dd data-profile-cards></dd></div>
+            <div><dt>주요 이동 수단</dt><dd data-profile-modes></dd></div>
+          </dl>
+          <p class="field-help" data-profile-updated></p>
+          <div class="profile-actions"><button class="button button--primary" type="button" data-profile-edit>교통 정보 수정</button></div>
+        </section>
+        <section class="card profile-panel" data-profile-editor hidden aria-labelledby="profile-edit-title">
+          <h2 id="profile-edit-title" tabindex="-1">내 교통 정보 등록·수정</h2>
+          <p class="auth-description">선택한 정보를 맞춤 안내에 사용해요. 일부 정보만 저장하거나 비워 둘 수도 있습니다.</p>
+          <form data-profile-form method="post">
+            <fieldset class="profile-fields">
+              <legend class="visually-hidden">교통 정보 입력</legend>
+              <div class="form-field"><label for="profile-region">거주 지역</label><select id="profile-region" name="region_code"><option value="">선택하지 않음</option></select></div>
+              <div class="form-field"><label for="profile-birth">생년월일</label><input id="profile-birth" name="birth_date" type="date" min="1900-01-01" autocomplete="bday" aria-describedby="profile-birth-help" /><p class="field-help" id="profile-birth-help">1900년 1월 1일부터 기준일 사이로 입력해 주세요.</p></div>
+              <fieldset class="profile-choices"><legend>현재 이용 중인 교통카드</legend><p class="field-help" id="profile-card-help">K-패스와 기후동행카드는 함께 선택할 수 있습니다. 기타 / 이용 카드 없음은 단독 선택합니다.</p><div data-profile-card-choices></div></fieldset>
+              <fieldset class="profile-choices"><legend>주요 이동 수단</legend><div data-profile-mode-choices></div></fieldset>
+              <div class="profile-actions"><button class="button button--primary" type="submit" data-profile-save>저장하기</button><button class="button button--secondary" type="button" data-profile-cancel>취소</button></div>
+            </fieldset>
+          </form>
+        </section>
+        <section class="card profile-panel" aria-labelledby="account-settings-title"><h2 id="account-settings-title">계정 설정</h2><div class="profile-actions"><button class="button button--secondary" type="button" data-profile-logout>로그아웃</button><button class="button button--secondary" type="button" data-profile-reset hidden>시연 교통 정보 초기화</button></div></section>
+      </section>
+    </template>
     <template id="session-view">
       <section class="auth-card card" aria-labelledby="session-title">
         <span class="badge badge--blue">BoSo 계정</span>
@@ -146,6 +186,7 @@
     <script id="boso-config" type="application/json">{"mode":"auto","apiBaseUrl":"http://localhost:8000"}</script>
     <script defer src="./src/services.js"></script>
     <script defer src="./src/auth.js"></script>
+    <script defer src="./src/profile.js"></script>
     <script defer src="./src/app.js"></script>
   </body>
 </html>

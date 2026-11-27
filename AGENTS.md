@@ -10,7 +10,7 @@
 ## 코드와 단일 파일
 
 - UTF-8, LF, 공백 2칸, 작은따옴표·세미콜론 생략을 따른다. 함수·변수는 camelCase, 클래스는 PascalCase, 파일명은 소문자와 필요한 하이픈을 사용한다.
-- 공통 HTML·template은 index.html, 이동·화면 조립은 src/app.js, API·상태는 src/services.js, 인증은 src/auth.js, 스타일은 src/styles.css에 둔다. 실제 기능이 커질 때만 JS 파일을 추가한다.
+- 공통 HTML·template은 index.html, 이동·화면 조립은 src/app.js, API·상태는 src/services.js, 인증은 src/auth.js, 프로필 서비스·화면 연결은 src/profile.js, 스타일은 src/styles.css에 둔다. 실제 기능이 커질 때만 JS 파일을 추가한다.
 - 브라우저 코드는 일반 script와 IIFE로 작성한다. 공유 연결점은 window.BoSo다. 외부 ES module·동적 import·CDN·런타임 HTML fetch에 의존하지 않는다.
 - 공통 UI는 시맨틱 HTML·CSS·template으로 재사용한다. 외부 입력은 textContent로 표시하고 검증 없는 innerHTML 삽입을 피한다.
 - 해시 경로를 사용하고 main은 하나만 둔다. 키보드 이동·현재 메뉴·제목·모바일 레이아웃을 유지한다. 디자인은 기존 스타일·캐릭터와 최종 와이어프레임을 참고한다.
@@ -25,6 +25,8 @@
 - 공개 API는 BoSo.services.request, 보호 API는 BoSo.auth.request(path, options)를 사용한다. JSON은 json, 취소는 signal, 추가 헤더는 headers로 전달한다. 오류 필드는 code/message/details/request_id다.
 - access token·CSRF 값은 인증 모듈의 메모리에만 두고 store·localStorage·sessionStorage·URL·로그에 넣지 않는다. refresh 쿠키는 서버가 관리한다. 로그인·갱신·로그아웃은 실제 서버 계약을 따른다.
 - 파일 모드 계정은 메모리에 salt·PBKDF2 digest만 저장하며 새로고침하면 초기화한다. 평문 비밀번호를 저장하지 않는다. file:// 인증을 위해 서버 Origin·CORS 보안을 완화하지 않는다.
+- 실제 프로필은 인증 API로만 읽고 저장하며 localStorage에 넣지 않는다. 시연 프로필만 버전·사용자별 키로 저장하고 초기화를 제공한다. 저장소 차단·손상은 메모리로 처리하고 화면에 유지 범위를 안내한다.
+- 화면을 벗어나면 진행 중인 프로필 요청을 취소하고, 계정이 바뀐 뒤 도착한 응답을 표시하지 않는다. 실제 모드의 나이·입력 완성 여부는 서버 응답을 사용한다.
 - 토큰·비밀번호·개인정보·질문 원문을 로그·커밋·PR에 노출하지 않는다. 실제 서버 없이 DB·Gemini·계정 인증이 동작한다고 보고하지 않는다.
 
 ## 실행과 검증

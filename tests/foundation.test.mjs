@@ -10,6 +10,7 @@ const source = await readFile(resolve(root, 'src/services.js'), 'utf8')
 const context = vm.createContext({ URL, Headers, TextEncoder, AbortSignal, crypto: webcrypto })
 vm.runInContext(source, context)
 vm.runInContext(await readFile(resolve(root, 'src/auth.js'), 'utf8'), context)
+vm.runInContext(await readFile(resolve(root, 'src/profile.js'), 'utf8'), context)
 const { createServices, createHttpClient, createStore, parseApiBaseUrl } = context.BoSo
 
 test('직접 연 파일은 live 설정에도 네트워크 없는 demo 모드다', async () => {
@@ -98,7 +99,7 @@ test('단일 HTML은 CSS·일반 JS·원본 이미지를 포함하고 재현 가
     if (attributes.includes('application/json')) JSON.parse(code)
     else new vm.Script(code)
   }
-  assert.equal(scripts.length, 4)
+  assert.equal(scripts.length, 5)
 })
 
 test('통합 빌드는 외부 자원과 모듈 스크립트를 거부한다', async () => {
@@ -310,4 +311,110 @@ test('인증 실패·잘못된 토큰 응답은 성공 상태를 만들지 않�
   release(grant())
   await first
   assert.equal(sends, 1)
+})
+
+const profileClock = () => Date.parse('2026-11-27T15:00:00Z')
+const completeProfile = { birth_date: '2000-11-28', region_code: 'seoul', transport_cards: ['k_pass'], transport_modes: ['bus'] }
+function profileFixture({ request = async () => { throw new Error('No network in demo') }, mode = 'demo', storage = null } = {}) {
+  const store = createStore({ auth: { status: 'authenticated', user: testUser } })
+  const service = context.BoSo.createProfile({ auth: { request }, services: { mode }, store, storage, now: profileClock })
+  return { service, store }
+}
+
+test('프로필 날짜·선택 검증은 윤년·미래·중복·기타 카드 배타 조건을 검사한다', async () => {
+  const { service } = profileFixture()
+  const { options } = await service.load()
+  const validate = (patch) => context.BoSo.validateProfile({ ...completeProfile, ...patch }, options, '2026-11-28')
+  for (const birth_date of ['1899-12-31', '2026-11-29', '2025-02-29', '2000-11-28T00:00:00Z']) assert.throws(() => validate({ birth_date }), { code: 'INVALID_BIRTH_DATE' })
+  assert.equal(validate({ birth_date: '2000-02-29' }).birth_date, '2000-02-29')
+  assert.equal(validate({ birth_date: null, region_code: null, transport_cards: [], transport_modes: [] }).birth_date, null)
+  for (const patch of [{ region_code: 'invalid' }, { transport_cards: ['k_pass', 'k_pass'] }, { transport_modes: ['bus', 'bus'] }, { transport_cards: ['other_or_none', 'k_pass'] }, { transport_modes: ['plane'] }]) assert.throws(() => validate(patch), { code: 'INVALID_PROFILE' })
+})
+
+test('시연 프로필은 한국 날짜·완성 상태·취소 없는 저장값을 계정별로 유지한다', async () => {
+  const { service, store } = profileFixture()
+  assert.equal((await service.load()).profile.reference_date, '2026-11-28')
+  const saved = await service.save(completeProfile)
+  assert.equal(saved.age, 26)
+  assert.equal(saved.is_complete, true)
+  assert.equal((await service.load()).profile.region_code, 'seoul')
+  store.setState({ auth: { status: 'authenticated', user: { ...testUser, id: 'second-user' } } })
+  assert.equal((await service.load()).profile.region_code, null)
+  store.setState({ auth: { status: 'authenticated', user: testUser } })
+  assert.equal((await service.load()).profile.region_code, 'seoul')
+  const reset = await service.resetDemo()
+  assert.equal(reset.profile.is_complete, false)
+  assert.equal(reset.profile.birth_date, null)
+})
+
+test('로컬 시연 저장은 버전·사용자별 키를 쓰며 토큰·이메일 없이 복원·초기화한다', async () => {
+  const records = new Map()
+  const storage = { getItem: (key) => records.get(key) ?? null, setItem: (key, value) => records.set(key, value), removeItem: (key) => records.delete(key) }
+  const { service } = profileFixture({ storage })
+  await service.load()
+  await service.save(completeProfile)
+  const raw = [...records.values()][0]
+  assert.ok(!raw.includes(testUser.email))
+  assert.ok(!raw.includes('access_token'))
+  assert.equal(JSON.parse(raw).version, 1)
+  const restored = profileFixture({ storage }).service
+  assert.equal((await restored.load()).profile.birth_date, completeProfile.birth_date)
+  await restored.resetDemo()
+  assert.equal(records.size, 0)
+  for (const broken of [{ getItem() { throw new Error('blocked') } }, { getItem() { return '{invalid json' } }, { getItem() { return JSON.stringify({ version: 9 }) } }]) {
+    const fallback = profileFixture({ storage: broken }).service
+    await fallback.load()
+    assert.equal(fallback.persistent, false)
+    await fallback.save(completeProfile)
+    assert.equal((await fallback.load()).profile.region_code, 'seoul')
+  }
+})
+
+test('실제 프로필은 확인한 API로만 조회·PATCH하고 서버의 나이·완성 정보를 보존한다', async () => {
+  const choices = (await profileFixture().service.load()).options
+  let response = { ...completeProfile, user_id: testUser.id, email: testUser.email, reference_date: '2026-11-28', age: 37, is_complete: false, missing_fields: ['transport_modes'], updated_at: null }
+  const calls = []
+  const { service } = profileFixture({ mode: 'live', request: async (path, init) => {
+    calls.push({ path, init })
+    if (path.endsWith('/options')) return choices
+    if (init.method === 'PATCH') response = { ...response, ...init.json }
+    return response
+  } })
+  const loaded = await service.load()
+  assert.equal(loaded.profile.age, 37)
+  assert.equal(loaded.profile.is_complete, false)
+  await service.save({ ...completeProfile, email: 'ignored@example.com', user_id: 'ignored-user' })
+  assert.deepEqual(calls.map(({ path }) => path), ['/api/v1/me/options', '/api/v1/me', '/api/v1/me'])
+  assert.equal(calls[2].init.method, 'PATCH')
+  assert.equal(JSON.stringify(calls[2].init.json), JSON.stringify(completeProfile))
+})
+
+test('다른 사용자의 프로필·늦은 응답·저장 실패는 성공으로 표시하거나 보관하지 않는다', async () => {
+  const choices = (await profileFixture().service.load()).options
+  const response = { ...completeProfile, user_id: testUser.id, email: testUser.email, reference_date: '2026-11-28', age: 26, is_complete: true, missing_fields: [], updated_at: null }
+  const wrong = profileFixture({ mode: 'live', request: async (path) => path.endsWith('/options') ? choices : { ...response, user_id: 'wrong-user' } })
+  await assert.rejects(wrong.service.load(), { code: 'INVALID_RESPONSE' })
+  let release
+  const late = profileFixture({ mode: 'live', request: async (path) => path.endsWith('/options') ? choices : new Promise((resolve) => { release = resolve }) })
+  const pending = late.service.load()
+  late.store.setState({ auth: { status: 'anonymous', user: null } })
+  release(response)
+  await assert.rejects(pending, { code: 'AUTH_REQUIRED' })
+  const failed = profileFixture({ mode: 'live', request: async (path, init) => {
+    if (init.method === 'PATCH') throw new TypeError('network unavailable')
+    return path.endsWith('/options') ? choices : response
+  } })
+  await failed.service.load()
+  await assert.rejects(failed.service.save(completeProfile), /network unavailable/)
+  await assert.rejects(failed.service.resetDemo(), { code: 'INVALID_PROFILE' })
+  let finishSave
+  const changing = profileFixture({ mode: 'live', request: async (path, init) => {
+    if (init.method === 'PATCH') return new Promise((resolve) => { finishSave = resolve })
+    return path.endsWith('/options') ? choices : response
+  } })
+  await changing.service.load()
+  const saving = changing.service.save(completeProfile)
+  changing.store.setState({ auth: { status: 'authenticated', user: { ...testUser, id: 'another-user' } } })
+  finishSave(response)
+  await assert.rejects(saving, { code: 'AUTH_REQUIRED' })
 })
