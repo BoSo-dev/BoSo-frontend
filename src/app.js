@@ -18,11 +18,13 @@
     const services = window.BoSo.createServices({ ...config, protocol: window.location.protocol })
     const store = window.BoSo.createStore({ route: null, mode: services.mode, auth: { status: 'loading', user: null, error: null } })
     const auth = window.BoSo.createAuth({ services, store })
-    Object.assign(window.BoSo, { services, store, auth })
+    const profile = window.BoSo.createProfile({ auth, services, store })
+    Object.assign(window.BoSo, { services, store, auth, profile })
     const noticeElement = document.getElementById('session-notice')
     const logoutButton = document.getElementById('logout-button')
     let notice = ''
     let loggingOut = false
+    let disposePage = () => {}
     document.getElementById('mode-label').textContent = services.mode === 'demo' ? '시연 모드' : '서버 연동 모드'
     document.getElementById('current-year').textContent = String(new Date().getFullYear())
 
@@ -123,8 +125,10 @@
         return
       }
       const blocked = (route?.protected && !authenticated) || ((key === 'login' || key === 'signup') && loading)
-      const template = blocked ? 'session-view' : key === 'login' || key === 'signup' ? 'auth-view' : key === 'home' ? 'home-view' : 'placeholder-view'
+      const template = blocked ? 'session-view' : key === 'login' || key === 'signup' ? 'auth-view' : key === 'profile' ? 'profile-view' : key === 'home' ? 'home-view' : 'placeholder-view'
       const previous = store.getState().route
+      disposePage()
+      disposePage = () => {}
       main.replaceChildren(document.getElementById(template).content.cloneNode(true))
       if (blocked && !loading) {
         main.querySelector('[data-session-title]').textContent = '로그인 정보를 확인할 수 없어요'
@@ -133,11 +137,10 @@
         main.querySelector('[data-retry-session]').addEventListener('click', () => { void auth.initialize() })
         main.querySelector('.session-actions a').href = '#/login?next=' + encodeURIComponent(key)
       } else if (template === 'auth-view') bindAuthForm(key, next)
+      else if (template === 'profile-view') disposePage = window.BoSo.mountProfile(main, { profile, services, store })
       else if (template === 'placeholder-view') {
         main.querySelector('[data-heading]').textContent = route?.title ?? '페이지를 찾을 수 없습니다.'
-        main.querySelector('[data-description]').textContent = key === 'profile' && authenticated
-          ? state.user.email + ' 계정으로 로그인했습니다. 교통 정보 관리는 다음 단계에서 제공해요.'
-          : route?.description ?? '주소를 다시 확인해 주세요.'
+        main.querySelector('[data-description]').textContent = route?.description ?? '주소를 다시 확인해 주세요.'
         if (!route) {
           main.querySelector('[data-empty-title]').textContent = '주소를 다시 확인해 주세요'
           main.querySelector('[data-empty-description]').textContent = '입력하신 주소가 변경되었거나 존재하지 않는 페이지예요.'
