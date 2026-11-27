@@ -7,10 +7,11 @@ import { webcrypto } from 'node:crypto'
 import { buildHtml, root } from '../scripts/build.mjs'
 
 const source = await readFile(resolve(root, 'src/services.js'), 'utf8')
-const context = vm.createContext({ URL, Headers, TextEncoder, AbortSignal, crypto: webcrypto })
+const context = vm.createContext({ URL, URLSearchParams, Headers, TextEncoder, AbortSignal, crypto: webcrypto })
 vm.runInContext(source, context)
 vm.runInContext(await readFile(resolve(root, 'src/auth.js'), 'utf8'), context)
 vm.runInContext(await readFile(resolve(root, 'src/profile.js'), 'utf8'), context)
+vm.runInContext(await readFile(resolve(root, 'src/policies.js'), 'utf8'), context)
 const { createServices, createHttpClient, createStore, parseApiBaseUrl } = context.BoSo
 
 test('직접 연 파일은 live 설정에도 네트워크 없는 demo 모드다', async () => {
@@ -90,16 +91,14 @@ test('단일 HTML은 CSS·일반 JS·원본 이미지를 포함하고 재현 가
   assert.doesNotMatch(html, /<link\b|<script\b[^>]*\bsrc=/i)
   assert.match(html, /<style>/)
   const images = [...html.matchAll(/<img\b[^>]*\bsrc="data:image\/png;base64,([^"]+)"/g)]
-  assert.equal(images.length, 2)
-  for (const [index, name] of ['boso-logo', 'boso-guide'].entries()) {
-    assert.deepEqual(Buffer.from(images[index][1], 'base64'), await readFile(resolve(root, `src/assets/${name}.png`)))
-  }
+  const expectedImages = new Set(await Promise.all(['boso-logo', 'boso-guide'].map(async (name) => (await readFile(resolve(root, `src/assets/${name}.png`))).toString('base64'))))
+  assert.deepEqual(new Set(images.map((match) => match[1])), expectedImages)
   const scripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)]
   for (const [, attributes, code] of scripts) {
     if (attributes.includes('application/json')) JSON.parse(code)
     else new vm.Script(code)
   }
-  assert.equal(scripts.length, 5)
+  assert.equal(scripts.length, 6)
 })
 
 test('통합 빌드는 외부 자원과 모듈 스크립트를 거부한다', async () => {
@@ -417,4 +416,76 @@ test('다른 사용자의 프로필·늦은 응답·저장 실패는 성공으�
   changing.store.setState({ auth: { status: 'authenticated', user: { ...testUser, id: 'another-user' } } })
   finishSave(response)
   await assert.rejects(saving, { code: 'AUTH_REQUIRED' })
+})
+
+const demoPolicies = (date = '2026-11-28') => context.BoSo.createPolicies({ services: { mode: 'demo' }, now: () => Date.parse(date + 'T03:00:00Z') })
+
+test('정책 시연은 검색·카테고리·상태·페이지를 조합하고 빈 결과를 구분한다', async () => {
+  const policies = demoPolicies()
+  const first = await policies.list()
+  assert.equal(first.total, 5)
+  assert.equal(first.items.length, 3)
+  assert.equal(first.pages, 2)
+  const second = await policies.list({ page: 2 })
+  assert.equal(second.items.length, 2)
+  assert.ok(!first.items.some((row) => second.items.some((item) => row.policy_key === item.policy_key)))
+  assert.equal((await policies.list({ page: 99999 })).filters.page, 2)
+  assert.equal((await policies.list({ category: 'transport_card' })).total, 2)
+  assert.equal((await policies.list({}, { cards: ['k_pass'] })).total, 1)
+  assert.equal((await policies.list({}, { cards: ['other_or_none'] })).total, 0)
+  assert.equal((await policies.list({ state: 'active' })).total, 3)
+  assert.equal((await policies.list({ state: 'ended' })).total, 1)
+  assert.equal((await policies.list({ state: 'expired' })).total, 1)
+  assert.equal((await policies.list({ q: ' K-패스 ', category: 'transport_card', state: 'active' })).total, 1)
+  const none = await policies.list({ q: '<script>alert(1)</script>' })
+  assert.equal(none.total, 0)
+  assert.equal(none.items.length, 0)
+})
+
+test('정책 상세는 변경 전후·요약 없음·종료·만료·없는 주소를 명시한다', async () => {
+  const policies = demoPolicies()
+  const changed = await policies.detail('demo-k-pass')
+  assert.equal(changed.policy.version, 2)
+  assert.equal(changed.previous.version, 1)
+  assert.notEqual(changed.previous.content, changed.policy.content)
+  assert.equal(changed.policy.is_example, true)
+  assert.equal(changed.policy.sources[0].kind, 'example')
+  assert.equal(changed.policy.sources[0].checked_on, changed.policy.reviewed_on)
+  const noSummary = await policies.detail('demo-climate-card')
+  assert.equal(noSummary.policy.ai_summary, null)
+  assert.equal(noSummary.previous, null)
+  assert.equal((await policies.detail('demo-support')).policy.actions.length, 0)
+  assert.equal((await policies.detail('demo-fare')).policy.state, 'expired')
+  for (const id of ['missing', '__proto__', '', 'https://evil.example']) await assert.rejects(policies.detail(id), { code: 'POLICY_NOT_FOUND' })
+  changed.policy.content = 'mutated'
+  assert.notEqual((await policies.detail('demo-k-pass')).policy.content, 'mutated')
+})
+
+test('정책 적용 시작일·종료일 포함 경계와 한국 기준일을 구분한다', async () => {
+  assert.equal((await demoPolicies('2025-12-31').detail('demo-k-pass')).policy.version, 1)
+  assert.equal((await demoPolicies('2026-01-01').detail('demo-k-pass')).policy.version, 2)
+  assert.equal((await demoPolicies('2026-12-31').detail('demo-k-pass')).policy.state, 'active')
+  assert.equal((await demoPolicies('2027-01-01').detail('demo-k-pass')).policy.state, 'expired')
+  const kst = context.BoSo.createPolicies({ services: { mode: 'demo' }, now: () => Date.parse('2026-12-31T15:00:00Z') })
+  assert.equal((await kst.detail('demo-k-pass')).policy.reference_date, '2027-01-01')
+})
+
+test('미확정 정책 HTTP 계약은 경로 추측·네트워크 호출·시연 성공 대체를 하지 않는다', async () => {
+  let called = 0
+  const live = context.BoSo.createPolicies({ services: { mode: 'live', request() { called++ } } })
+  await assert.rejects(live.list(), { code: 'POLICY_API_UNAVAILABLE' })
+  await assert.rejects(live.detail('demo-k-pass'), { code: 'POLICY_API_UNAVAILABLE' })
+  assert.equal(called, 0)
+})
+
+test('정책 필터·URL은 허용 값을 검사하고 검색어를 안전한 해시로 인코딩한다', () => {
+  const { normalizePolicyFilters, policyHref, safePolicyUrl } = context.BoSo
+  for (const filter of [{ q: 'x'.repeat(101) }, { category: '__proto__' }, { state: 'constructor' }, { page: 0 }, { page: -1 }, { page: '1.5' }, { page: '1x' }]) assert.throws(() => normalizePolicyFilters(filter), { code: 'INVALID_POLICY_FILTER' })
+  const href = policyHref({ q: 'a&state=ended', category: 'transport_card', page: 2 }, 'demo-k-pass')
+  const query = new URLSearchParams(href.split('?')[1])
+  assert.equal(query.get('q'), 'a&state=ended')
+  assert.equal(query.get('state'), null)
+  assert.equal(query.get('id'), 'demo-k-pass')
+  assert.equal(safePolicyUrl('https://example.com/policy'), 'https://example.com/policy')
+  for (const url of ['javascript:alert(1)', '//evil.example', 'http://example.com', 'https://user:pass@example.com', 'https://example.com?q=secret', 'https://example.com/#x', 'https://example.com:8443/', 'https://example.com/\npath']) assert.equal(safePolicyUrl(url), null)
 })

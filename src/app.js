@@ -19,10 +19,13 @@
     const store = window.BoSo.createStore({ route: null, mode: services.mode, auth: { status: 'loading', user: null, error: null } })
     const auth = window.BoSo.createAuth({ services, store })
     const profile = window.BoSo.createProfile({ auth, services, store })
-    Object.assign(window.BoSo, { services, store, auth, profile })
+    const policies = window.BoSo.createPolicies({ services })
+    Object.assign(window.BoSo, { services, store, auth, profile, policies })
     const noticeElement = document.getElementById('session-notice')
     const logoutButton = document.getElementById('logout-button')
     let notice = ''
+    let noticeHash = null
+    let noticeTimer
     let loggingOut = false
     let disposePage = () => {}
     document.getElementById('mode-label').textContent = services.mode === 'demo' ? '시연 모드' : '서버 연동 모드'
@@ -34,11 +37,24 @@
       const [key, query = ''] = (hash === '#main-content' ? 'home' : hash.replace(/^#\//, '') || 'home').split('?')
       const requested = new URLSearchParams(query).get('next')
       const next = Object.hasOwn(routes, requested) && routes[requested].protected ? requested : 'profile'
-      return { key, next }
+      return { key, next, policyDetail: new URLSearchParams(query).has('id') }
     }
     function showNotice() {
       noticeElement.textContent = store.getState().auth.error || notice
       noticeElement.hidden = !noticeElement.textContent
+    }
+    function clearNotice() {
+      window.clearTimeout(noticeTimer)
+      notice = ''
+      noticeHash = null
+      showNotice()
+    }
+    function setNotice(message, destination = window.location.hash) {
+      window.clearTimeout(noticeTimer)
+      notice = message
+      noticeHash = destination
+      showNotice()
+      noticeTimer = window.setTimeout(clearNotice, 4000)
     }
     function formError(form, error) {
       if (!form.isConnected) return
@@ -78,15 +94,16 @@
         const password = form.elements.password.value
         const confirmation = form.elements.confirmation.value
         main.querySelector('[data-auth-message]').hidden = true
+        clearNotice()
         setBusy(true)
         try {
           if (signup) {
             await auth.signup(email, password, confirmation)
-            notice = '회원가입이 완료되었습니다. 로그인해 주세요.'
+            setNotice('회원가입이 완료되었습니다. 로그인해 주세요.', '#/login?next=' + encodeURIComponent(next))
             if (form.isConnected) navigate('login?next=' + encodeURIComponent(next))
           } else {
             await auth.login(email, password)
-            notice = '로그인했습니다.'
+            setNotice('로그인했습니다.')
           }
           showNotice()
         } catch (error) { formError(form, error) } finally {
@@ -97,6 +114,7 @@
         }
       })
       demoButton.addEventListener('click', async () => {
+        clearNotice()
         setBusy(true)
         try { await auth.enterDemo() } catch (error) { formError(form, error) } finally {
           if (form.isConnected) setBusy(false)
@@ -105,7 +123,7 @@
     }
 
     function render() {
-      const { key, next } = currentRoute()
+      const { key, next, policyDetail } = currentRoute()
       const route = Object.hasOwn(routes, key) ? routes[key] : undefined
       const state = store.getState().auth
       const authenticated = state.status === 'authenticated'
@@ -125,7 +143,7 @@
         return
       }
       const blocked = (route?.protected && !authenticated) || ((key === 'login' || key === 'signup') && loading)
-      const template = blocked ? 'session-view' : key === 'login' || key === 'signup' ? 'auth-view' : key === 'profile' ? 'profile-view' : key === 'home' ? 'home-view' : 'placeholder-view'
+      const template = blocked ? 'session-view' : key === 'login' || key === 'signup' ? 'auth-view' : key === 'profile' ? 'profile-view' : key === 'policies' ? policyDetail ? 'policy-detail-view' : 'policies-view' : key === 'home' ? 'home-view' : 'placeholder-view'
       const previous = store.getState().route
       disposePage()
       disposePage = () => {}
@@ -138,6 +156,7 @@
         main.querySelector('.session-actions a').href = '#/login?next=' + encodeURIComponent(key)
       } else if (template === 'auth-view') bindAuthForm(key, next)
       else if (template === 'profile-view') disposePage = window.BoSo.mountProfile(main, { profile, services, store })
+      else if (key === 'policies' || key === 'home') disposePage = window.BoSo.mountPolicies(main, { policies, services, profile, store, home: key === 'home' })
       else if (template === 'placeholder-view') {
         main.querySelector('[data-heading]').textContent = route?.title ?? '페이지를 찾을 수 없습니다.'
         main.querySelector('[data-description]').textContent = route?.description ?? '주소를 다시 확인해 주세요.'
@@ -165,9 +184,9 @@
       logoutButton.disabled = true
       try {
         await auth.logout()
-        notice = '로그아웃했습니다.'
+        setNotice('로그아웃했습니다.', '#/home')
         navigate('home')
-      } catch (error) { notice = window.BoSo.authMessage(error) } finally {
+      } catch (error) { setNotice(window.BoSo.authMessage(error)) } finally {
         loggingOut = false
         logoutButton.disabled = false
         showNotice()
@@ -177,6 +196,7 @@
     store.subscribe((state) => {
       if (state.auth === previousAuth) return
       previousAuth = state.auth
+      clearNotice()
       render()
     })
     document.querySelector('.skip-link').addEventListener('click', (event) => {
@@ -184,7 +204,10 @@
       main.focus()
       main.scrollIntoView()
     })
-    window.addEventListener('hashchange', render)
+    window.addEventListener('hashchange', () => {
+      if (window.location.hash !== noticeHash) clearNotice()
+      render()
+    })
     render()
     void auth.initialize()
   } catch {
