@@ -5,7 +5,7 @@ import { webcrypto } from 'node:crypto'
 import vm from 'node:vm'
 
 const context = vm.createContext({ URL, URLSearchParams, Headers, AbortSignal, crypto: webcrypto, TextEncoder })
-for (const name of ['services', 'auth', 'policies', 'feature-kit', 'todos', 'chat']) vm.runInContext(await readFile(new URL(`../src/${name}.js`, import.meta.url), 'utf8'), context)
+for (const name of ['services', 'auth', 'policies', 'feature-kit', 'todos', 'chat', 'notifications']) vm.runInContext(await readFile(new URL(`../src/${name}.js`, import.meta.url), 'utf8'), context)
 const user = { id: '00000000-0000-4000-8000-000000000001', email: 'demo@example.com' }
 function fixture(mode = 'demo', request = async () => { throw new Error('No network in demo') }, extra = {}) {
   const store = context.BoSo.createStore({ auth: { status: 'authenticated', user } })
@@ -103,4 +103,28 @@ test('챗봇의 위험한 근거 주소와 잘못된 응답을 거부한다', as
   const c = await demo.create(), example = await demo.send(c.id, '정책 확인')
   const { chat } = chatFixture('live', async (path, options) => ({ ...example, request_id: options.json.request_id, sources: [{ version_id: webcrypto.randomUUID(), policy_id: webcrypto.randomUUID(), source_key: 'test', title: 'test', url: 'javascript:alert(1)' }] }))
   await assert.rejects(chat.send(c.id, '정책 확인'), { code: 'INVALID_RESPONSE' })
+})
+test('시연 알림 읽음·모두 읽음·계정별 분리와 구독', async () => {
+  const { options, store } = fixture()
+  const notifications = context.BoSo.createNotifications(options)
+  let changes = 0
+  const unsubscribe = notifications.subscribe(() => { changes++ })
+  assert.equal((await notifications.summary()).unread, 2)
+  const first = (await notifications.list('unread')).items[0]
+  await notifications.read(first.id)
+  assert.equal((await notifications.list('read')).total, 1)
+  await notifications.readAll()
+  assert.equal((await notifications.summary()).unread, 0)
+  assert.equal(changes, 2)
+  unsubscribe()
+  store.setState({ auth: { status: 'authenticated', user: { ...user, id: webcrypto.randomUUID() } } })
+  assert.equal((await notifications.summary()).unread, 2)
+})
+test('실제 알림 계약이 없으면 임의 API와 시연 대체를 사용하지 않는다', async () => {
+  let requests = 0
+  const { options } = fixture('live', async () => { requests++; throw new Error('Unexpected request') })
+  const notifications = context.BoSo.createNotifications(options)
+  await assert.rejects(notifications.list(), { code: 'NOTIFICATION_API_UNAVAILABLE' })
+  await assert.rejects(notifications.readAll(), { code: 'NOTIFICATION_API_UNAVAILABLE' })
+  assert.equal(requests, 0)
 })
