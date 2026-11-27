@@ -84,6 +84,8 @@
     }
   }
   function message(problem) {
+    const chatMessages = { CHAT_NOT_FOUND: '대화를 찾을 수 없습니다. 새 대화를 시작해 주세요.', CHAT_REQUEST_CONFLICT: '이전 요청과 질문 내용이 다릅니다. 대화를 다시 불러와 주세요.', CHAT_RATE_LIMITED: '질문이 많습니다. 잠시 후 다시 전송해 주세요.', CHAT_PROVIDER_RATE_LIMITED: '상담 서비스가 혼잡합니다. 잠시 후 다시 전송해 주세요.', CHAT_PROVIDER_UNAVAILABLE: '상담 서비스에 연결하지 못했습니다. 질문을 유지했으니 대화를 확인한 후 다시 전송해 주세요.', CHAT_PROVIDER_INVALID_RESPONSE: '상담 응답을 확인할 수 없습니다. 대화를 다시 불러와 주세요.' }
+    if (Object.hasOwn(chatMessages, problem?.code)) return chatMessages[problem.code]
     const messages = { TODO_NOT_ACTIVE: '정책과 대상 조건이 변경되어 완료 상태를 바꿀 수 없습니다. 할 일을 다시 확인해 주세요.', TODO_NOT_FOUND: '할 일을 찾을 수 없습니다.', CHAT_NOT_CONFIGURED: '챗봇 서버 설정이 준비되지 않았습니다.', NOTIFICATION_API_UNAVAILABLE: '알림 서비스를 준비하고 있어요. 현재는 시연 모드에서 확인할 수 있습니다.', INVALID_RESPONSE: '서버 응답 형식을 확인할 수 없습니다. 다시 불러와 주세요.', INVALID_INPUT: '입력 내용을 확인해 주세요.', STORAGE_FAILED: '브라우저 저장 정보를 삭제하지 못했습니다. 저장 권한을 확인해 주세요.' }
     return Object.hasOwn(messages, problem?.code) ? messages[problem.code] : global.BoSo.authMessage(problem)
   }
